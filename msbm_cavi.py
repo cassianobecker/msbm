@@ -93,8 +93,13 @@ def update_rho(mom, data, prior, par):
 def elbo_gamma(mom, data, prior, par):
 	#We use NUdiff from update_z
 	NUdiff = sp.psi(mom['NU']) - sp.psi(np.einsum('ij,k->ik', mom['NU'], np.ones(par['Q'])))
-    lb_gamma = np.einsum( 'mq->',(prior['NU_0']- mom['NU'])*NUdiff)
-     #Add the \Gamma terms
+	lb_gamma = np.einsum( 'mq->',(prior['NU_0']- mom['NU'])*NUdiff)
+	#Add the \Gamma terms (Not in the updates)
+	gammasum_nu   = sum(sp.gammaln(np.einsum('mq->m', mom['NU'])))
+	sumgamma_nu   = np.einsum('mq->', sp.gammaln(mom['NU']))
+	gammasum_nu0 = sum(sp.gammaln(np.einsum('mq->m', np.ones((4,3))*prior['NU_0'])))
+	sumgamma_nu0 = np.einsum('mq->', sp.gammaln(np.ones((4,3))*prior['NU_0']))
+	lb_gamma = lb_gamma + gammasum_nu0 - sumgamma_nu0 - gammasum_nu + sumgamma_nu
 	return lb_gamma
 
 ################## AUXILIARY FUNCTIONS #################
