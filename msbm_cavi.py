@@ -90,6 +90,17 @@ def update_rho(mom, data, prior, par):
     return NEW_ZETA
 
 ################## COMPUTING THE ELBO #################
+def elbo_x(mom,data,prior,par):
+	#We use one line from update_z
+	ALPHAdiff = sp.psi(mom['ALPHA']) - sp.psi(mom['ALPHA'] + mom['BETA'])
+	BETAdiff  = sp.psi(mom['BETA'])  - sp.psi(mom['ALPHA'] + mom['BETA'])
+	#We use the einsums from update_pi (and add ALPHAdiff, BETAdiff)
+	strsum = 'km,kmiq,kmjr,kij,mqr->'
+	P1 = np.einsum(strsum, mom['MU'],mom['TAU'], mom['TAU'], data['X'], ALPHAdiff)
+	P2 = np.einsum(strsum, mom['MU'],mom['TAU'], mom['TAU'], 1.0 -data['X'], BETAdiff)
+	lb_x = P1 + P2
+	return lb_x
+
 def elbo_gamma(mom, data, prior, par):
 	#We use NUdiff from update_z
 	NUdiff = sp.psi(mom['NU']) - sp.psi(np.einsum('ij,k->ik', mom['NU'], np.ones(par['Q'])))
@@ -97,11 +108,58 @@ def elbo_gamma(mom, data, prior, par):
 	#Add the \Gamma terms (Not in the updates)
 	gammasum_nu   = sum(sp.gammaln(np.einsum('mq->m', mom['NU'])))
 	sumgamma_nu   = np.einsum('mq->', sp.gammaln(mom['NU']))
-	gammasum_nu0 = sum(sp.gammaln(np.einsum('mq->m', np.ones((4,3))*prior['NU_0'])))
-	sumgamma_nu0 = np.einsum('mq->', sp.gammaln(np.ones((4,3))*prior['NU_0']))
+	gammasum_nu0 = sum(sp.gammaln(np.einsum('mq->m', np.ones(mom['NU'].shape)*prior['NU_0'])))
+	sumgamma_nu0 = np.einsum('mq->', sp.gammaln( np.ones(mom['NU'].shape)*prior['NU_0'] ))
 	lb_gamma = lb_gamma + gammasum_nu0 - sumgamma_nu0 - gammasum_nu + sumgamma_nu
 	return lb_gamma
 
+def elbo_rho(mom,data,prior,par):
+	#We use ZETAdiff from update_y
+	ZETAdiff = sp.psi(mom['ZETA']) - np.expand_dims(np.sum(sp.psi(mom['ZETA'])), axis=1)
+	lb_rho   = sum((prior['ZETA_0']- mom['ZETA'])*ZETAdiff)
+	#We add gamma terms (not in any update)
+	gammasum_zeta   = sp.gammaln(sum(mom['ZETA']))
+	sumgamma_zeta   = sum(sp.gammaln(mom['ZETA']))
+	gammasum_zeta0  = sp.gammaln(sum( prior['ZETA_0']*np.ones(mom['ZETA'].shape)))
+	sumgamma_zeta0  = sum(sp.gammaln( prior['ZETA_0']*np.ones(mom['ZETA'].shape)))
+	lb_rho = lb_rho + gammasum_zeta0 - sumgamma_zeta0 - gammasum_zeta + sumgamma_zeta
+	return lb_rho
+
+def elbo_pi(mom,data,prior,par):
+	#We use one line from update_Z
+	lb_alpha = np.einsum('mqr->',(prior['ALPHA_0'] - mom['ALPHA'])*(sp.psi(mom['ALPHA']) - sp.psi(mom['ALPHA'] + mom['BETA'])))
+	lb_beta  = np.einsum('mqr->',(prior['BETA_0']  -  mom['BETA'])*(sp.psi(mom['BETA'])  - sp.psi(mom['ALPHA'] + mom['BETA'])))
+	#We add the gamma terms
+	gammasum_ab = np.einsum('mqr->',sp.gammaln(mom['ALPHA']+mom['BETA']))
+	sumgamma_ab = np.einsum('mqr->',sp.gammaln(mom['ALPHA']) + sp.gammaln(mom['BETA']))
+	gammasum_ab0 = np.einsum('mqr->',sp.gammaln( prior['ALPHA_0']*np.ones(mom['ALPHA'].shape) + prior['BETA_0']*np.ones(mom['BETA'].shape)))
+	sumgamma_ab0 = np.einsum('mqr->',sp.gammaln(prior['ALPHA_0']*np.ones(mom['ALPHA'].shape)) + sp.gammaln(prior['BETA_0']*np.ones(mom['BETA'].shape)) )    
+	lb_pi = lb_alpha + lb_beta + gammasum_ab0 - sumgamma_ab0 - gammasum_ab + sumgamma_ab
+	return lb_pi
+
+def elbo_y(mom,data,prior,par):
+	#We use ZETAdiff from update_y
+	ZETAdiff = sp.psi(mom['ZETA']) - np.expand_dims(np.sum(sp.psi(mom['ZETA'])), axis=1)
+	lb_y = np.einsum('km,m->',mom['MU'],ZETAdiff) - np.einsum( 'km->', sp.xlogy(mom['MU'],mom['MU']))
+	return lb_y
+
+def elbo_z(mom,data,prior,par):
+	#We use NUdiff from update_z
+	NUdiff = sp.psi(mom['NU']) - sp.psi(np.einsum('ij,k->ik', mom['NU'], np.ones(par['Q'])))
+	P1     = np.einsum( 'km,kmiq,mq->',mom['MU'],mom['TAU'],NUdiff)
+	P2     = np.einsum( 'km,kmiq->', mom['MU'],sp.xlogy(mom['TAU'],mom['TAU']))
+	lb_z   = P1 - P2
+	return lb_z
+
+def compute_elbo(mom,data,prior,par):
+    elbo = dict()
+    elbo['x'] = elbo_x(mom,data,prior,par)
+    elbo['rho']  = elbo_rho(mom,data,prior,par)
+    elbo['pi'] =   elbo_pi(mom,data,prior,par)
+    elbo['gamma']= elbo_gamma(mom,data,prior,par)
+    elbo['y'] = elbo_y(mom, data,prior,par)
+    elbo['z'] = elbo_z(mom,data,prior,par)
+    return sum(elbo.values())
 ################## AUXILIARY FUNCTIONS #################
 
 
@@ -170,13 +228,16 @@ def cavi_msbm(mom, data, prior, par):
     print('##############################################################')
 
     T = par['MAX_ITER']
-
+    lbs= np.array(0)
     for t in range(T):
 
         par['kappa'] = float((t+10))/float((T+10))
+        
+        elbo = compute_elbo(mom,data,prior,par)
+        lbs = np.append(lbs,elbo)
 
-        print('Iter: {:3d} of {:3d} (kappa = {:.4f}) ---  adj. rand index: {:+.3f}'
-              .format(t+1, T, par['kappa'], adj_rand(mom['MU'], data['Y'])))
+        print('Iter: {:3d} of {:3d} (kappa = {:.4f}) --- elbo: {:+.3f}, adj. rand index: {:+.3f}'
+              .format(t+1, T, par['kappa'], elbo ,adj_rand(mom['MU'], data['Y'])))
 
         ALPHA, BETA = update_Pi(mom, data, prior, par)
         mom['ALPHA'] = ALPHA
@@ -194,10 +255,10 @@ def cavi_msbm(mom, data, prior, par):
         ZETA = update_rho(mom, data, prior, par)
         mom['ZETA'] = ZETA
         
-        elbo = elbo_gamma(mom,data,prior,par)
+        
     print('\nFinished (maximum number of iterations).')
 
-    return mom
+    return mom, lbs
 
 
 def test_cavi(data_file_url, out_file_url):
@@ -208,10 +269,10 @@ def test_cavi(data_file_url, out_file_url):
 
     par['MAX_ITER'] = 15
 
-    results_mom = cavi_msbm(mom, data, prior, par)
+    results_mom, lbs = cavi_msbm(mom, data, prior, par)
 
     print('\nSaving results to {:s} ... '.format(out_file_url), end='')
-    pickle.dump({'mom': results_mom}, open(out_file_url, 'wb'))
+    pickle.dump({'mom': results_mom,'lbs' : lbs}, open(out_file_url, 'wb'))
     print('Saved.')
 
 
