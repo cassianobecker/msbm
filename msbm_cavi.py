@@ -89,6 +89,14 @@ def update_rho(mom, data, prior, par):
 
     return NEW_ZETA
 
+################## COMPUTING THE ELBO #################
+def elbo_gamma(mom, data, prior, par):
+	#We use NUdiff from update_z
+	NUdiff = sp.psi(mom['NU']) - sp.psi(np.einsum('ij,k->ik', mom['NU'], np.ones(par['Q'])))
+    lb_gamma = np.einsum( 'mq->',(prior['NU_0']- mom['NU'])*NUdiff)
+     #Add the \Gamma terms
+	return lb_gamma
+
 ################## AUXILIARY FUNCTIONS #################
 
 
@@ -180,7 +188,8 @@ def cavi_msbm(mom, data, prior, par):
 
         ZETA = update_rho(mom, data, prior, par)
         mom['ZETA'] = ZETA
-
+        
+        elbo = elbo_gamma(mom,data,prior,par)
     print('\nFinished (maximum number of iterations).')
 
     return mom
