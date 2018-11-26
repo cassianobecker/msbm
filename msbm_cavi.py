@@ -49,7 +49,7 @@ def update_Z(mom, data, prior, par):
 
 def update_Y(mom, data, prior, par):
 
-    ZETAdiff = sp.psi(mom['ZETA']) - np.expand_dims(np.sum(sp.psi(mom['ZETA'])), axis=1)
+    ZETAdiff = sp.psi(mom['ZETA']) - sum(sp.psi(mom['ZETA']))
 
     S1 = np.einsum('m,k->km', ZETAdiff, np.ones(par['K']))
 
@@ -115,7 +115,7 @@ def elbo_gamma(mom, data, prior, par):
 
 def elbo_rho(mom,data,prior,par):
 	#We use ZETAdiff from update_y
-	ZETAdiff = sp.psi(mom['ZETA']) - np.expand_dims(np.sum(sp.psi(mom['ZETA'])), axis=1)
+	ZETAdiff = sp.psi(mom['ZETA']) - sum(sp.psi(mom['ZETA']))
 	lb_rho   = sum((prior['ZETA_0']- mom['ZETA'])*ZETAdiff)
 	#We add gamma terms (not in any update)
 	gammasum_zeta   = sp.gammaln(sum(mom['ZETA']))
@@ -139,7 +139,7 @@ def elbo_pi(mom,data,prior,par):
 
 def elbo_y(mom,data,prior,par):
 	#We use ZETAdiff from update_y
-	ZETAdiff = sp.psi(mom['ZETA']) - np.expand_dims(np.sum(sp.psi(mom['ZETA'])), axis=1)
+	ZETAdiff = sp.psi(mom['ZETA']) - sum(sp.psi(mom['ZETA']))
 	lb_y = np.einsum('km,m->',mom['MU'],ZETAdiff) - np.einsum( 'km->', sp.xlogy(mom['MU'],mom['MU']))
 	return lb_y
 
@@ -190,7 +190,7 @@ def load_data(data_file_url):
 
 def init_moments(par):
 
-    npr.seed(0)
+    npr.seed(123)
 
     prior = dict()
     prior['ALPHA_0'] = 0.5
@@ -231,8 +231,8 @@ def cavi_msbm(mom, data, prior, par):
     lbs= np.array(0)
     for t in range(T):
 
-        par['kappa'] = float((t+10))/float((T+10))
-        
+#        par['kappa'] = float((t+10))/float((T+10))
+        par['kappa'] = 1.0        
         elbo = compute_elbo(mom,data,prior,par)
         lbs = np.append(lbs,elbo)
 
@@ -242,19 +242,19 @@ def cavi_msbm(mom, data, prior, par):
         ALPHA, BETA = update_Pi(mom, data, prior, par)
         mom['ALPHA'] = ALPHA
         mom['BETA'] = BETA
-
+        print('PARTIAL ELBO: {:+.3f}'.format(compute_elbo(mom,data,prior,par)))
         TAU = update_Z(mom, data, prior, par)
         mom['TAU'] = TAU
-
+        print('PARTIAL ELBO: {:+.3f}'.format(compute_elbo(mom,data,prior,par)))
         NU = update_gamma(mom, data, prior, par)
         mom['NU'] = NU
-
+        print('PARTIAL ELBO: {:+.3f}'.format(compute_elbo(mom,data,prior,par)))
         MU = update_Y(mom, data, prior, par)
         mom['MU'] = MU
-
+        print('PARTIAL ELBO: {:+.3f}'.format(compute_elbo(mom,data,prior,par)))
         ZETA = update_rho(mom, data, prior, par)
         mom['ZETA'] = ZETA
-        
+        print('PARTIAL ELBO: {:+.3f}'.format(compute_elbo(mom,data,prior,par)))        
         
     print('\nFinished (maximum number of iterations).')
 
