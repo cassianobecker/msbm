@@ -13,21 +13,34 @@ def get_pi(m):
 
     Pi = list()
 
-    Pi.append(np.array([[H, L, L],
-                        [L, H, L],
-                        [L, L, H]]))
-
-    Pi.append(np.array([[H, M, M],
-                        [M, H, M],
-                        [M, M, H]]))
-
-    Pi.append(np.array([[M, L, L],
-                        [L, M, L],
-                        [L, L, M]]))
-
-    Pi.append(np.array([[M, M, M],
-                        [M, M, M],
-                        [M, M, M]]))
+#    Pi.append(np.array([[H, L, L],
+#                        [L, H, L],
+#                        [L, L, H]]))
+    Pi.append(np.array([[0.2176, 0.0185, 0.0836,0.1015],
+                        [0.0614, 0.4529, 0.0327, 0.0008],
+                        [0.0048, 0.0642, 0.4515, 0.1021],
+                        [0.0192, 0.0403, 0.0800, 0.4061]]))
+#    Pi.append(np.array([[H, M, M],
+#                        [M, H, M],
+#                        [M, M, H]]))
+    Pi.append(np.array([[0.6789, 0.0293, 0.0437, 0.1759],
+                        [0.1498, 0.6418, 0.0317, 0.0043],
+                        [0.0057, 0.1007, 0.4528, 0.1595],
+                        [0.2032, 0.1081, 0.3031, 0.4716]]))
+#    Pi.append(np.array([[M, L, L],
+#                        [L, M, L],
+#                        [L, L, M]]))
+    Pi.append(np.array([[0.5706, 0.0187, 0.0697, 0.0196],
+                        [0.0108, 0.3748, 0.0352, 0.0887],
+                        [0.0047, 0.0349, 0.2650, 0.1951],
+                        [0.0008, 0.0432, 0.0012, 0.4281]]))
+#    Pi.append(np.array([[M, M, M],
+#                        [M, M, M],
+#                        [M, M, M]]))
+    Pi.append(np.array([[0.3659, 0.1162, 0.0579, 0.0148],
+                        [0.1144, 0.4836, 0.0219, 0.0475],
+                        [0.0627, 0.0016, 0.4275, 0.1200],
+                        [0.0803, 0.1355, 0.0054, 0.2231]]))
 
     return Pi[m]
 
@@ -57,10 +70,10 @@ def get_gamma(m):
 
     gamma = list()
 
-    gamma.append(np.array([0.2, 0.5, 0.7]))
-    gamma.append(np.array([0.3, 0.3, 0.3]))
-    gamma.append(np.array([0.5, 0.1, 0.1]))
-    gamma.append(np.array([0.3, 0.3, 0.3]))
+    gamma.append(np.array([0.4773,0.3043,0.1458,0.0725])) 
+    gamma.append(np.array([0.2650,0.2580,0.2499,0.2271])) #Tweak to make it easier
+    gamma.append(np.array([0.3597,0.2641,0.2617,0.1145]))
+    gamma.append(np.array([0.3540,0.3082,0.2169,0.1209]))
 
     return gamma[m]/np.sum(gamma[m])
 
@@ -136,13 +149,13 @@ def main():
         data_file_url = sys.argv[1]
 
     # number of classes
-    Q = 3
+    Q = 4
     # number of nodes
-    N = 100
+    N = 150
     # number of models
     M = 4
     # number of networks
-    K = 50
+    K = 80
 
     # sample model
     data, par = create_msbm(Q, N, M, K)

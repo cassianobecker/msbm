@@ -190,7 +190,7 @@ def load_data(data_file_url):
 
 def init_moments(par):
 
-    npr.seed(123)
+    npr.seed(1001)
 
     prior = dict()
     prior['ALPHA_0'] = 0.5
@@ -231,8 +231,8 @@ def cavi_msbm(mom, data, prior, par):
     lbs= np.array(0)
     for t in range(T):
 
-#        par['kappa'] = float((t+10))/float((T+10))
-        par['kappa'] = 1.0        
+        par['kappa'] = float((t+2))/float((T+2))
+#        par['kappa'] = 1.0        
         elbo = compute_elbo(mom,data,prior,par)
         lbs = np.append(lbs,elbo)
 
@@ -242,19 +242,19 @@ def cavi_msbm(mom, data, prior, par):
         ALPHA, BETA = update_Pi(mom, data, prior, par)
         mom['ALPHA'] = ALPHA
         mom['BETA'] = BETA
-        print('PARTIAL ELBO: {:+.3f}'.format(compute_elbo(mom,data,prior,par)))
+
         TAU = update_Z(mom, data, prior, par)
         mom['TAU'] = TAU
-        print('PARTIAL ELBO: {:+.3f}'.format(compute_elbo(mom,data,prior,par)))
+
         NU = update_gamma(mom, data, prior, par)
         mom['NU'] = NU
-        print('PARTIAL ELBO: {:+.3f}'.format(compute_elbo(mom,data,prior,par)))
+
         MU = update_Y(mom, data, prior, par)
         mom['MU'] = MU
-        print('PARTIAL ELBO: {:+.3f}'.format(compute_elbo(mom,data,prior,par)))
+
         ZETA = update_rho(mom, data, prior, par)
         mom['ZETA'] = ZETA
-        print('PARTIAL ELBO: {:+.3f}'.format(compute_elbo(mom,data,prior,par)))        
+
         
     print('\nFinished (maximum number of iterations).')
 
@@ -267,7 +267,7 @@ def test_cavi(data_file_url, out_file_url):
 
     mom, prior = init_moments(par)
 
-    par['MAX_ITER'] = 15
+    par['MAX_ITER'] = 20
 
     results_mom, lbs = cavi_msbm(mom, data, prior, par)
 
