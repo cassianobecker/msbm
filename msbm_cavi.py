@@ -49,7 +49,7 @@ def update_Z(mom, data, prior, par):
 
 def update_Y(mom, data, prior, par):
 
-    ZETAdiff = sp.psi(mom['ZETA']) - sum(sp.psi(mom['ZETA']))
+    ZETAdiff = sp.psi(mom['ZETA']) - sp.psi(sum(mom['ZETA']))
 
     S1 = np.einsum('m,k->km', ZETAdiff, np.ones(par['K']))
 
@@ -115,7 +115,7 @@ def elbo_gamma(mom, data, prior, par):
 
 def elbo_rho(mom,data,prior,par):
 	#We use ZETAdiff from update_y
-	ZETAdiff = sp.psi(mom['ZETA']) - sum(sp.psi(mom['ZETA']))
+	ZETAdiff = sp.psi(mom['ZETA']) - sp.psi(sum(mom['ZETA']))
 	lb_rho   = sum((prior['ZETA_0']- mom['ZETA'])*ZETAdiff)
 	#We add gamma terms (not in any update)
 	gammasum_zeta   = sp.gammaln(sum(mom['ZETA']))
@@ -139,7 +139,7 @@ def elbo_pi(mom,data,prior,par):
 
 def elbo_y(mom,data,prior,par):
 	#We use ZETAdiff from update_y
-	ZETAdiff = sp.psi(mom['ZETA']) - sum(sp.psi(mom['ZETA']))
+	ZETAdiff = sp.psi(mom['ZETA']) - sp.psi(sum(mom['ZETA']))
 	lb_y = np.einsum('km,m->',mom['MU'],ZETAdiff) - np.einsum( 'km->', sp.xlogy(mom['MU'],mom['MU']))
 	return lb_y
 
