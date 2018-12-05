@@ -38,9 +38,14 @@ def update_Z(mom, data, prior, par):
 
     S2 = np.einsum('km,kmjr,mqrijk->kmiq', mom['MU'], mom['TAU'], P1 + P2)
 
-    NEW_TAU = (S1 + S2)
+    NEW_LOG_TAU = par['kappa']*(S1 + S2)
 
-    NEW_TAU = np.exp(par['kappa']*(NEW_TAU - np.expand_dims(np.max(NEW_TAU, axis=3), axis=3)))
+    return NEW_LOG_TAU
+
+
+def par_from_mom_TAU(mom, par):
+
+    NEW_TAU = np.exp(mom['LOG_TAU'] - np.expand_dims(np.max(mom['LOG_TAU'], axis=3), axis=3))
 
     NEW_TAU = NEW_TAU / np.expand_dims(np.sum(NEW_TAU, axis=3), axis=3)
 
@@ -65,9 +70,14 @@ def update_Y(mom, data, prior, par):
 
     S3 = np.einsum('kmiq,mq->km', mom['TAU'], NUdiff)
 
-    NEW_MU = (S1 + S2 + S3)
+    NEW_LOG_MU = par['kappa']*(S1 + S2 + S3)
 
-    NEW_MU = np.exp(par['kappa']*(NEW_MU - np.expand_dims(np.max(NEW_MU, axis=1), axis=1)))
+    return NEW_LOG_MU
+
+
+def par_from_mom_MU(mom, par):
+
+    NEW_MU = np.exp(mom['LOG_MU'] - np.expand_dims(np.max(mom['LOG_MU'], axis=1), axis=1))
 
     NEW_MU = NEW_MU / np.expand_dims(np.sum(NEW_MU, axis=1), axis=1)
 
@@ -76,92 +86,218 @@ def update_Y(mom, data, prior, par):
 
 def update_gamma(mom, data, prior, par):
 
-    NEW_NU = par['kappa']*(prior['NU_0'] +
-                           np.einsum('km,kmiq->mq', mom['MU'], mom['TAU']) - 1.0) + 1.0
+    NEW_NU = par['kappa']*(prior['NU_0'] + np.einsum('km,kmiq->mq', mom['MU'], mom['TAU']) - 1.0) + 1.0
 
     return NEW_NU
 
 
 def update_rho(mom, data, prior, par):
 
-    NEW_ZETA = par['kappa']*(prior['ZETA_0'] +
-                             np.einsum('km->m', mom['MU']) - 1.0) + 1.0
+    NEW_ZETA = par['kappa']*(prior['ZETA_0'] + np.einsum('km->m', mom['MU']) - 1.0) + 1.0
+
+    return NEW_ZETA################ CAVI UPDATE FUNCTIONS #########################
+
+
+def update_Pi(mom, data, prior, par):
+
+    strsum = 'km,kij,kmiq,kmjr->mqr'
+
+    NEW_ALPHA = par['kappa']*(prior['ALPHA_0'] +
+                       np.einsum(strsum, mom['MU'], data['X'],
+                                 mom['TAU'], mom['TAU']) - 1.0) + 1.0
+
+    NEW_BETA = par['kappa']*(prior['BETA_0'] +
+                      np.einsum(strsum, mom['MU'], 1.0 - data['X'],
+                                mom['TAU'], mom['TAU']) - 1.0) + 1.0
+
+    return NEW_ALPHA, NEW_BETA
+
+
+def update_Z(mom, data, prior, par):
+
+    NUdiff = sp.psi(mom['NU']) - sp.psi(np.einsum('ij,k->ik', mom['NU'], np.ones(par['Q'])))
+
+    S1 = np.einsum('km,mq,i->kmiq', mom['MU'], NUdiff, np.ones(par['N']))
+
+    P2 = np.einsum('mqr,i,j,k->mqrijk',
+                   sp.psi(mom['BETA']) - sp.psi(mom['ALPHA'] + mom['BETA']),
+                   np.ones(par['N']), np.ones(par['N']), np.ones(par['K']))
+
+    P1 = np.einsum('kij,mqr->mqrijk',
+                   data['X'],
+                   sp.psi(mom['ALPHA']) - sp.psi(mom['BETA']))
+
+    S2 = np.einsum('km,kmjr,mqrijk->kmiq', mom['MU'], mom['TAU'], P1 + P2)
+
+    NEW_LOG_TAU = par['kappa']*(S1 + S2)
+
+    return NEW_LOG_TAU
+
+
+def par_from_mom_TAU(mom, par):
+
+    NEW_TAU = np.exp(mom['LOG_TAU'] - np.expand_dims(np.max(mom['LOG_TAU'], axis=3), axis=3))
+
+    NEW_TAU = NEW_TAU / np.expand_dims(np.sum(NEW_TAU, axis=3), axis=3)
+
+    return NEW_TAU
+
+
+def update_Y(mom, data, prior, par):
+
+    ZETAdiff = sp.psi(mom['ZETA']) - sp.psi(sum(mom['ZETA']))
+
+    S1 = np.einsum('m,k->km', ZETAdiff, np.ones(par['K']))
+
+    P1 = np.einsum('kij,mqr->mqrijk', data['X'], sp.psi(mom['ALPHA']) - sp.psi(mom['BETA']))
+
+    P2 = np.einsum('mqr,i,j,k->mqrijk',
+                   sp.psi(mom['BETA']) - sp.psi(mom['ALPHA'] + mom['BETA']),
+                   np.ones(par['N']), np.ones(par['N']), np.ones(par['K']))
+
+    S2 = np.einsum('kmiq,kmjr,mqrijk->km', mom['TAU'], mom['TAU'], P1 + P2)
+
+    NUdiff = sp.psi(mom['NU']) - sp.psi(np.einsum('ij,k->ik', mom['NU'], np.ones(par['Q'])))
+
+    S3 = np.einsum('kmiq,mq->km', mom['TAU'], NUdiff)
+
+    NEW_LOG_MU = par['kappa']*(S1 + S2 + S3)
+
+    return NEW_LOG_MU
+
+
+def par_from_mom_MU(mom, par):
+
+    NEW_MU = np.exp(mom['LOG_MU'] - np.expand_dims(np.max(mom['LOG_MU'], axis=1), axis=1))
+
+    NEW_MU = NEW_MU / np.expand_dims(np.sum(NEW_MU, axis=1), axis=1)
+
+    return NEW_MU
+
+
+def update_gamma(mom, data, prior, par):
+
+    NEW_NU = par['kappa']*(prior['NU_0'] + np.einsum('km,kmiq->mq', mom['MU'], mom['TAU']) - 1.0) + 1.0
+
+    return NEW_NU
+
+
+def update_rho(mom, data, prior, par):
+
+    NEW_ZETA = par['kappa']*(prior['ZETA_0'] + np.einsum('km->m', mom['MU']) - 1.0) + 1.0
 
     return NEW_ZETA
 
+
 ################## COMPUTING THE ELBO #################
-def elbo_x(mom,data,prior,par):
-	#We use one line from update_z
-	ALPHAdiff = sp.psi(mom['ALPHA']) - sp.psi(mom['ALPHA'] + mom['BETA'])
-	BETAdiff  = sp.psi(mom['BETA'])  - sp.psi(mom['ALPHA'] + mom['BETA'])
-	#We use the einsums from update_pi (and add ALPHAdiff, BETAdiff)
-	strsum = 'km,kmiq,kmjr,kij,mqr->'
-	P1 = np.einsum(strsum, mom['MU'],mom['TAU'], mom['TAU'], data['X'], ALPHAdiff)
-	P2 = np.einsum(strsum, mom['MU'],mom['TAU'], mom['TAU'], 1.0 -data['X'], BETAdiff)
-	lb_x = P1 + P2
-	return lb_x
+
+def elbo_x(mom, data, prior, par):
+
+    #We use one line from update_z
+    ALPHAdiff = sp.psi(mom['ALPHA']) - sp.psi(mom['ALPHA'] + mom['BETA'])
+    BETAdiff = sp.psi(mom['BETA']) - sp.psi(mom['ALPHA'] + mom['BETA'])
+
+    #We use the einsums from update_pi (and add ALPHAdiff, BETAdiff)
+    strsum = 'km,kmiq,kmjr,kij,mqr->'
+    P1 = np.einsum(strsum, mom['MU'], mom['TAU'], mom['TAU'], data['X'], ALPHAdiff)
+    P2 = np.einsum(strsum, mom['MU'], mom['TAU'], mom['TAU'], 1.0 -data['X'], BETAdiff)
+
+    lb_x = P1 + P2
+
+    return lb_x
+
 
 def elbo_gamma(mom, data, prior, par):
-	#We use NUdiff from update_z
-	NUdiff = sp.psi(mom['NU']) - sp.psi(np.einsum('ij,k->ik', mom['NU'], np.ones(par['Q'])))
-	lb_gamma = np.einsum( 'mq->',(prior['NU_0']- mom['NU'])*NUdiff)
-	#Add the \Gamma terms (Not in the updates)
-	gammasum_nu   = sum(sp.gammaln(np.einsum('mq->m', mom['NU'])))
-	sumgamma_nu   = np.einsum('mq->', sp.gammaln(mom['NU']))
-	gammasum_nu0 = sum(sp.gammaln(np.einsum('mq->m', np.ones(mom['NU'].shape)*prior['NU_0'])))
-	sumgamma_nu0 = np.einsum('mq->', sp.gammaln( np.ones(mom['NU'].shape)*prior['NU_0'] ))
-	lb_gamma = lb_gamma + gammasum_nu0 - sumgamma_nu0 - gammasum_nu + sumgamma_nu
-	return lb_gamma
+
+    #We use NUdiff from update_z
+    NUdiff = sp.psi(mom['NU']) - sp.psi(np.einsum('ij,k->ik', mom['NU'], np.ones(par['Q'])))
+    lb_gamma = np.einsum( 'mq->',(prior['NU_0']- mom['NU'])*NUdiff)
+
+    #Add the \Gamma terms (Not in the updates)
+    gammasum_nu = sum(sp.gammaln(np.einsum('mq->m', mom['NU'])))
+    sumgamma_nu = np.einsum('mq->', sp.gammaln(mom['NU']))
+    gammasum_nu0 = sum(sp.gammaln(np.einsum('mq->m', np.ones(mom['NU'].shape)*prior['NU_0'])))
+    sumgamma_nu0 = np.einsum('mq->', sp.gammaln(np.ones(mom['NU'].shape)*prior['NU_0']))
+
+    lb_gamma = lb_gamma + gammasum_nu0 - sumgamma_nu0 - gammasum_nu + sumgamma_nu
+
+    return lb_gamma
+
 
 def elbo_rho(mom,data,prior,par):
-	#We use ZETAdiff from update_y
-	ZETAdiff = sp.psi(mom['ZETA']) - sp.psi(sum(mom['ZETA']))
-	lb_rho   = sum((prior['ZETA_0']- mom['ZETA'])*ZETAdiff)
-	#We add gamma terms (not in any update)
-	gammasum_zeta   = sp.gammaln(sum(mom['ZETA']))
-	sumgamma_zeta   = sum(sp.gammaln(mom['ZETA']))
-	gammasum_zeta0  = sp.gammaln(sum( prior['ZETA_0']*np.ones(mom['ZETA'].shape)))
-	sumgamma_zeta0  = sum(sp.gammaln( prior['ZETA_0']*np.ones(mom['ZETA'].shape)))
-	lb_rho = lb_rho + gammasum_zeta0 - sumgamma_zeta0 - gammasum_zeta + sumgamma_zeta
-	return lb_rho
+
+    #We use ZETAdiff from update_y
+    ZETAdiff = sp.psi(mom['ZETA']) - sp.psi(sum(mom['ZETA']))
+    lb_rho   = sum((prior['ZETA_0']- mom['ZETA'])*ZETAdiff)
+
+    #We add gamma terms (not in any update)
+    gammasum_zeta = sp.gammaln(sum(mom['ZETA']))
+    sumgamma_zeta = sum(sp.gammaln(mom['ZETA']))
+    gammasum_zeta0 = sp.gammaln(sum(prior['ZETA_0']*np.ones(mom['ZETA'].shape)))
+    sumgamma_zeta0 = sum(sp.gammaln(prior['ZETA_0']*np.ones(mom['ZETA'].shape)))
+
+    lb_rho = lb_rho + gammasum_zeta0 - sumgamma_zeta0 - gammasum_zeta + sumgamma_zeta
+
+    return lb_rho
+
 
 def elbo_pi(mom,data,prior,par):
-	#We use one line from update_Z
-	lb_alpha = np.einsum('mqr->',(prior['ALPHA_0'] - mom['ALPHA'])*(sp.psi(mom['ALPHA']) - sp.psi(mom['ALPHA'] + mom['BETA'])))
-	lb_beta  = np.einsum('mqr->',(prior['BETA_0']  -  mom['BETA'])*(sp.psi(mom['BETA'])  - sp.psi(mom['ALPHA'] + mom['BETA'])))
-	#We add the gamma terms
-	gammasum_ab = np.einsum('mqr->',sp.gammaln(mom['ALPHA']+mom['BETA']))
-	sumgamma_ab = np.einsum('mqr->',sp.gammaln(mom['ALPHA']) + sp.gammaln(mom['BETA']))
-	gammasum_ab0 = np.einsum('mqr->',sp.gammaln( prior['ALPHA_0']*np.ones(mom['ALPHA'].shape) + prior['BETA_0']*np.ones(mom['BETA'].shape)))
-	sumgamma_ab0 = np.einsum('mqr->',sp.gammaln(prior['ALPHA_0']*np.ones(mom['ALPHA'].shape)) + sp.gammaln(prior['BETA_0']*np.ones(mom['BETA'].shape)) )    
-	lb_pi = lb_alpha + lb_beta + gammasum_ab0 - sumgamma_ab0 - gammasum_ab + sumgamma_ab
-	return lb_pi
+
+    #We use one line from update_Z
+    lb_alpha = np.einsum('mqr->', (prior['ALPHA_0'] - mom['ALPHA'])
+                         *(sp.psi(mom['ALPHA']) - sp.psi(mom['ALPHA'] + mom['BETA'])))
+    lb_beta  = np.einsum('mqr->', (prior['BETA_0'] - mom['BETA'])
+                         *(sp.psi(mom['BETA']) - sp.psi(mom['ALPHA'] + mom['BETA'])))
+
+    #We add the gamma terms
+    gammasum_ab = np.einsum('mqr->', sp.gammaln(mom['ALPHA']+mom['BETA']))
+    sumgamma_ab = np.einsum('mqr->', sp.gammaln(mom['ALPHA']) + sp.gammaln(mom['BETA']))
+    gammasum_ab0 = np.einsum('mqr->', sp.gammaln( prior['ALPHA_0']*np.ones(mom['ALPHA'].shape)
+                                                  + prior['BETA_0']*np.ones(mom['BETA'].shape)))
+    sumgamma_ab0 = np.einsum('mqr->', sp.gammaln(prior['ALPHA_0']*np.ones(mom['ALPHA'].shape))
+                             + sp.gammaln(prior['BETA_0']*np.ones(mom['BETA'].shape)))
+
+    lb_pi = lb_alpha + lb_beta + gammasum_ab0 - sumgamma_ab0 - gammasum_ab + sumgamma_ab
+
+    return lb_pi
+
 
 def elbo_y(mom,data,prior,par):
-	#We use ZETAdiff from update_y
-	ZETAdiff = sp.psi(mom['ZETA']) - sp.psi(sum(mom['ZETA']))
-	lb_y = np.einsum('km,m->',mom['MU'],ZETAdiff) - np.einsum( 'km->', sp.xlogy(mom['MU'],mom['MU']))
-	return lb_y
+
+    #We use ZETAdiff from update_y
+    ZETAdiff = sp.psi(mom['ZETA']) - sp.psi(sum(mom['ZETA']))
+
+    lb_y = np.einsum('km,m->', mom['MU'], ZETAdiff) - np.einsum( 'km->', sp.xlogy(mom['MU'], mom['MU']))
+
+    return lb_y
+
 
 def elbo_z(mom,data,prior,par):
-	#We use NUdiff from update_z
-	NUdiff = sp.psi(mom['NU']) - sp.psi(np.einsum('ij,k->ik', mom['NU'], np.ones(par['Q'])))
-	P1     = np.einsum( 'km,kmiq,mq->',mom['MU'],mom['TAU'],NUdiff)
-	P2     = np.einsum( 'km,kmiq->', mom['MU'],sp.xlogy(mom['TAU'],mom['TAU']))
-	lb_z   = P1 - P2
-	return lb_z
+
+    #We use NUdiff from update_z
+    NUdiff = sp.psi(mom['NU']) - sp.psi(np.einsum('ij,k->ik', mom['NU'], np.ones(par['Q'])))
+    P1     = np.einsum( 'km,kmiq,mq->', mom['MU'], mom['TAU'], NUdiff)
+    P2     = np.einsum( 'km,kmiq->', mom['MU'], sp.xlogy(mom['TAU'],mom['TAU']))
+
+    lb_z   = P1 - P2
+
+    return lb_z
+
 
 def compute_elbo(mom,data,prior,par):
-    elbo = dict()
-    elbo['x'] = elbo_x(mom,data,prior,par)
-    elbo['rho']  = elbo_rho(mom,data,prior,par)
-    elbo['pi'] =   elbo_pi(mom,data,prior,par)
-    elbo['gamma']= elbo_gamma(mom,data,prior,par)
-    elbo['y'] = elbo_y(mom, data,prior,par)
-    elbo['z'] = elbo_z(mom,data,prior,par)
-    return sum(elbo.values())
-################## AUXILIARY FUNCTIONS #################
 
+    elbo = dict()
+    elbo['x'] = elbo_x(mom, data, prior, par)
+    elbo['rho'] = elbo_rho(mom, data, prior, par)
+    elbo['pi'] = elbo_pi(mom, data, prior, par)
+    elbo['gamma'] = elbo_gamma(mom, data, prior, par)
+    elbo['y'] = elbo_y(mom, data, prior, par)
+    elbo['z'] = elbo_z(mom,data, prior, par)
+
+    return sum(elbo.values())
+
+
+################## AUXILIARY FUNCTIONS #################
 
 def find_col(idc):
 
@@ -177,6 +313,14 @@ def adj_rand(tau, Z):
     return rand_index
 
 
+def adj_rand_Z(mom, data):
+
+    ms = np.argmax(mom['MU'], axis=1)
+    adj_rand_Z = [adj_rand(mom['TAU'][k, m, :], data['Z'][k, :]) for k, m in enumerate(ms)]
+
+    return adj_rand_Z
+
+
 ################# INITIALIZATION FUNCTIONS ###############
 
 def load_data(data_file_url):
@@ -190,7 +334,7 @@ def load_data(data_file_url):
 
 def init_moments(par):
 
-    npr.seed(1001)
+    npr.seed(1)
 
     prior = dict()
     prior['ALPHA_0'] = 0.5
@@ -207,6 +351,7 @@ def init_moments(par):
     MU = npr.rand(par['K'], par['M'])
     MU = MU / np.expand_dims(np.sum(MU, axis=1), axis=1)
     mom['MU'] = MU
+    mom['LOG_MU'] = np.log(MU)
 
     TAU = npr.rand(par['K'], par['M'], par['N'], par['Q'])
     for k in range(par['K']):
@@ -214,48 +359,97 @@ def init_moments(par):
             TAU[k, m, :] = TAU[k, m, :] / np.expand_dims(np.sum(TAU[k, m, :], axis=1), axis=1)
 
     mom['TAU'] = TAU
+    mom['LOG_TAU'] = np.log(TAU)
 
     return mom, prior
 
+
 #################### MAIN CAVI PROGRAM #####################
+
+def sigmoid(x):
+    return 1/(1 + np.exp(-x))
+
 
 def cavi_msbm(mom, data, prior, par):
 
+
+    ####### SELECT ALGORITHM #####
+    #alg = 'natgrad'
+    alg = 'cavi'
+
     print('##############################################################')
-    print('------------------- RUNNING CAVI FOR MSBM --------------------')
+    print('                RUNNING ' + str.upper(alg) + ' FOR MSBM        ')
     print('                K = {:d}, M = {:d}, N = {:d}, Q = {:}'.
           format(par['K'], par['M'], par['N'], par['Q']))
     print('##############################################################')
 
     T = par['MAX_ITER']
-    lbs= np.array(0)
+    lbs = np.array(0)
+    kappas = sigmoid(np.linspace(-3, 10, T))
+
     for t in range(T):
 
-        par['kappa'] = float((t+2))/float((T+2))
-#        par['kappa'] = 1.0        
+        par['kappa'] = kappas[t]
+
         elbo = compute_elbo(mom,data,prior,par)
         lbs = np.append(lbs,elbo)
 
-        print('Iter: {:3d} of {:3d} (kappa = {:.4f}) --- elbo: {:+.3f}, adj. rand index: {:+.3f}'
-              .format(t+1, T, par['kappa'], elbo ,adj_rand(mom['MU'], data['Y'])))
+        if 'Y' in data.keys():
+            print('Iter: {:3d} of {:3d} (kappa = {:.4f}) --- elbo: {:+.5e},  adj. rand index Y: {:+.3f}'
+                  .format(t + 1, T, par['kappa'], elbo , adj_rand(mom['MU'], data['Y'])))
+        else:
+            print('Iter: {:3d} of {:3d} (kappa = {:.4f}) --- elbo: {:+.5e}'.format(t+1, T, par['kappa'], elbo ))
 
-        ALPHA, BETA = update_Pi(mom, data, prior, par)
-        mom['ALPHA'] = ALPHA
-        mom['BETA'] = BETA
+        ######################## CAVI IMPLEMENTATION ########################
 
-        TAU = update_Z(mom, data, prior, par)
-        mom['TAU'] = TAU
+        if alg == 'cavi':
 
-        NU = update_gamma(mom, data, prior, par)
-        mom['NU'] = NU
+            ALPHA, BETA = update_Pi(mom, data, prior, par)
+            mom['ALPHA'] = ALPHA
+            mom['BETA'] = BETA
 
-        MU = update_Y(mom, data, prior, par)
-        mom['MU'] = MU
+            LOG_TAU = update_Z(mom, data, prior, par)
+            mom['LOG_TAU'] = LOG_TAU
+            mom['TAU'] = par_from_mom_TAU(mom, par)
 
-        ZETA = update_rho(mom, data, prior, par)
-        mom['ZETA'] = ZETA
+            NU = update_gamma(mom, data, prior, par)
+            mom['NU'] = NU
 
-        
+            LOG_MU = update_Y(mom, data, prior, par)
+            mom['LOG_MU'] = LOG_MU
+            mom['MU'] = par_from_mom_MU(mom, par)
+
+            ZETA = update_rho(mom, data, prior, par)
+            mom['ZETA'] = ZETA
+
+        ###################### NATGRAD IMPLEMENTATION #######################
+
+        if alg == 'natgrad':
+
+            s_t1 = 0.2
+            s_t2 = 1.0
+            mom_new = dict()
+
+            ALPHA, BETA = update_Pi(mom, data, prior, par)
+            mom_new['ALPHA'] = (1.0 - s_t2)*mom['ALPHA'] + s_t2*ALPHA
+            mom_new['BETA'] = (1.0 - s_t2)*mom['BETA'] + s_t2*BETA
+
+            LOG_TAU = update_Z(mom, data, prior, par)
+            mom_new['LOG_TAU'] = (1.0 - s_t2)*mom['LOG_TAU'] + s_t2*LOG_TAU
+            mom_new['TAU'] = par_from_mom_TAU(mom_new, par)
+
+            NU = update_gamma(mom, data, prior, par)
+            mom_new['NU'] = (1.0 - s_t1)*mom['NU'] + s_t1*NU
+
+            LOG_MU = update_Y(mom, data, prior, par)
+            mom_new['LOG_MU'] = (1.0 - s_t1)*mom['LOG_MU'] + s_t1*LOG_MU
+            mom_new['MU'] = par_from_mom_MU(mom_new, par)
+
+            ZETA = update_rho(mom, data, prior, par)
+            mom_new['ZETA'] = (1.0 - s_t1)*mom['ZETA'] + s_t1*ZETA
+
+            mom = mom_new
+
     print('\nFinished (maximum number of iterations).')
 
     return mom, lbs
@@ -264,15 +458,17 @@ def cavi_msbm(mom, data, prior, par):
 def test_cavi(data_file_url, out_file_url):
 
     data, par = load_data(data_file_url)
+    par['Q'] = 3
+    par['M'] = 4
 
     mom, prior = init_moments(par)
 
-    par['MAX_ITER'] = 20
+    par['MAX_ITER'] = 100
 
-    results_mom, lbs = cavi_msbm(mom, data, prior, par)
+    results_mom = cavi_msbm(mom, data, prior, par)
 
     print('\nSaving results to {:s} ... '.format(out_file_url), end='')
-    pickle.dump({'mom': results_mom,'lbs' : lbs}, open(out_file_url, 'wb'))
+    pickle.dump({'mom': results_mom}, open(out_file_url, 'wb'))
     print('Saved.')
 
 
@@ -281,7 +477,7 @@ def main():
     if len(sys.argv) < 3:
 
         path_data = 'data'
-        fname = 'msbm1'
+        fname = 'msbm2'
         data_file_url = path_data + '/' + fname + '.pickle'
         out_file_url = path_data + '/' + 'results_' + fname + '.pickle'
 
