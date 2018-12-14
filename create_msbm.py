@@ -3,20 +3,21 @@ import numpy.random as npr
 import sys
 import pickle
 
-############## SAMPLING FUNCTIONS #######################
+# ############# SAMPLING FUNCTIONS #######################
+
 
 def get_pi(m):
 
-    M = 0.3
-    H = 0.7
-    L = 0.1
+    # M = 0.3
+    # H = 0.7
+    # L = 0.1
 
     Pi = list()
 
 #    Pi.append(np.array([[H, L, L],
 #                        [L, H, L],
 #                        [L, L, H]]))
-    Pi.append(np.array([[0.2176, 0.0185, 0.0836,0.1015],
+    Pi.append(np.array([[0.2176, 0.0185, 0.0836, 0.1015],
                         [0.0614, 0.4529, 0.0327, 0.0008],
                         [0.0048, 0.0642, 0.4515, 0.1021],
                         [0.0192, 0.0403, 0.0800, 0.4061]]))
@@ -70,15 +71,16 @@ def get_gamma(m):
 
     gamma = list()
 
-    gamma.append(np.array([0.4773,0.3043,0.1458,0.0725])) 
-    gamma.append(np.array([0.2650,0.2580,0.2499,0.2271])) #Tweak to make it easier
-    gamma.append(np.array([0.3597,0.2641,0.2617,0.1145]))
-    gamma.append(np.array([0.3540,0.3082,0.2169,0.1209]))
+    gamma.append(np.array([0.4773, 0.3043, 0.1458, 0.0725]))
+    gamma.append(np.array([0.2650, 0.2580, 0.2499, 0.2271]))  # Tweak to make it easier
+    gamma.append(np.array([0.3597, 0.2641, 0.2617, 0.1145]))
+    gamma.append(np.array([0.3540, 0.3082, 0.2169, 0.1209]))
 
     return gamma[m]/np.sum(gamma[m])
 
 
 def sample_X_und(Pi, Z):
+
     N = Z.shape[0]
     X = np.zeros((N, N))
     for i in range(N):
@@ -87,10 +89,12 @@ def sample_X_und(Pi, Z):
                 zj = find_row(Z[j, :])
                 X[i, j] = npr.binomial(1, Pi[zi, zj])
                 X[j, i] = X[i, j]
+
     return X.astype(float)
 
 
-################ MODEL CREATION ################
+# ############### MODEL CREATION ################
+
 
 def create_msbm(Q, N, M, K):
 
@@ -132,10 +136,13 @@ def create_msbm(Q, N, M, K):
 
     return data, par
 
+
 def find_row(x):
+
     return np.nonzero(x)[0][0]
 
-################ MAIN PROGRAM #####################
+# ############### MAIN PROGRAM #####################
+
 
 def main():
 
@@ -165,5 +172,7 @@ def main():
     pickle.dump({'data': data, 'par': par}, open(data_file_url, 'wb'))
     print('saved.')
 
+
 if __name__ == '__main__':
+
     main()
