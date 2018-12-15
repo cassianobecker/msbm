@@ -1,6 +1,5 @@
 import msbm
 import plot
-import numpy as np
 from util import *
 import init_msbm as im
 
@@ -39,7 +38,7 @@ def infer(mom, data, prior, par, alg='cavi'):
 
         if 'Y' in data.keys():
             print(
-                'Iter: {:3d} of {:3d} (kappa = {:.4f}) --- elbo: {:+.5e}, | ari Y: {:+.3f} | m.ari Z: {:+.3f} |'.format(
+                'Iter: {:3d} of {:3d} (kappa = {:.4f}) --- elbo: {:+.5e}, | ari(Y): {:+.3f} | avg. ari(Z): {:+.3f} |'.format(
                     t + 1, T, par['kappa'], elbo, ari_Y, mari_Z))
         else:
             print(
@@ -54,10 +53,9 @@ def infer(mom, data, prior, par, alg='cavi'):
             mom['ALPHA'] = ALPHA
             mom['BETA'] = BETA
 
-            for l in range(1):
-                LOG_TAU = msbm.update_Z(mom, data, prior, par)
-                mom['LOG_TAU'] = LOG_TAU
-                mom['TAU'] = msbm.par_from_mom_TAU(mom, par)
+            LOG_TAU = msbm.update_Z(mom, data, prior, par)
+            mom['LOG_TAU'] = LOG_TAU
+            mom['TAU'] = msbm.par_from_mom_TAU(mom, par)
 
             NU = msbm.update_gamma(mom, data, prior, par)
             mom['NU'] = NU
@@ -69,13 +67,12 @@ def infer(mom, data, prior, par, alg='cavi'):
             ZETA = msbm.update_rho(mom, data, prior, par)
             mom['ZETA'] = ZETA
 
-            if t+1 in TS:
+            if t + 1 in TS:
                 print('RESETTING MOMENTS for ALPHA, BETA, NU, TAU')
                 mode = 'random'
                 mom['ALPHA'] = im.init_ALPHA(par, mode)
                 mom['BETA'] = im.init_BETA(par, mode)
                 mom['NU'] = im.init_NU(par, mode)
-                mom['ZETA'] = im.init_ZETA(par, mode)
                 mom['TAU'] = im.init_TAU(par, mode)
                 mom['LOG_TAU'] = np.log(mom['TAU'])
 

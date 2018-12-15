@@ -4,7 +4,7 @@ import numpy.random as npr
 
 def init_moments(par):
 
-    #npr.seed(1)
+    npr.seed(1)
 
     prior = dict()
     prior['ALPHA_0'] = 0.5
@@ -44,7 +44,6 @@ def init_ZETA(par, mode='random'):
         ZETA = npr.rand(par['M'])
     if mode == 'uniform':
         ZETA = np.ones(par['M'])/par['M']
-
 
     return ZETA
 
@@ -95,8 +94,6 @@ def init_TAU(par, mode='random'):
     return TAU
 
 def init_moments_truth(par, data):
-
-    npr.seed(1)
 
     prior = dict()
     prior['ALPHA_0'] = 0.5

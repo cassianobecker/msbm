@@ -22,6 +22,7 @@ def test_varinf(data_file_url, out_file_url):
 
     data, par = load_data(data_file_url)
 
+    # override hyper-parameters from data
     # par['Q'] = 3
     # par['M'] = 2
 
@@ -48,7 +49,7 @@ def main():
     if len(sys.argv) < 3:
 
         path_data = 'data'
-        fname = 'msbm3'
+        fname = 'msbm2'
         data_file_url = path_data + '/' + fname + '.pickle'
         out_file_url = path_data + '/' + 'results_' + fname + '.pickle'
 
