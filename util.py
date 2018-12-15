@@ -11,24 +11,16 @@ def find_col(idc):
     return col
 
 
-def adj_rand(tau, Z):
+def adj_rand(tau, X):
 
-    rand_index = skm.adjusted_rand_score(find_col(Z), np.argmax(tau, axis=1))
+    ari = skm.adjusted_rand_score(find_col(X), np.argmax(tau, axis=1))
 
-    return rand_index
+    return ari
 
 
 def adj_rand_Z(mom, data):
 
     ms = np.argmax(mom['MU'], axis=1)
-    arZ = [adj_rand(mom['TAU'][k, m, :], data['Z'][k, :]) for k, m in enumerate(ms)]
+    aris = [adj_rand(mom['TAU'][k, m, :], data['Z'][k, :]) for k, m in enumerate(ms)]
 
-    return arZ
-
-
-def replicate_array(X, d, k):
-
-    for i in range(k):
-        X = np.expand_dims(X, axis=d)
-
-    return X
+    return aris

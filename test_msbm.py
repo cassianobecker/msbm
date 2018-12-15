@@ -21,8 +21,9 @@ def load_data(data_file_url):
 def test_varinf(data_file_url, out_file_url):
 
     data, par = load_data(data_file_url)
-    par['Q'] = 3
-    par['M'] = 4
+
+    # par['Q'] = 3
+    # par['M'] = 2
 
     mom, prior = im.init_moments(par)
 
@@ -34,7 +35,8 @@ def test_varinf(data_file_url, out_file_url):
 
     par['MAX_ITER'] = 100
 
-    results_mom = varinf.infer(mom, data, prior, par)
+    # START VARIATIONAL INFERENCE
+    results_mom = varinf.infer(mom, data, prior, par, 'cavi')
 
     print('\nSaving results to {:s} ... '.format(out_file_url), end='')
     pickle.dump({'mom': results_mom}, open(out_file_url, 'wb'))
@@ -46,7 +48,7 @@ def main():
     if len(sys.argv) < 3:
 
         path_data = 'data'
-        fname = 'msbm2'
+        fname = 'msbm3'
         data_file_url = path_data + '/' + fname + '.pickle'
         out_file_url = path_data + '/' + 'results_' + fname + '.pickle'
 
