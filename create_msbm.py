@@ -3,8 +3,102 @@ import numpy.random as npr
 import sys
 import pickle
 
-# ############# SAMPLING FUNCTIONS #######################
+def accept_prob(e,eprime,T):
+    """
+    accept_prob acceptance probability for every step of
+    the simulated annealing. We accept the new state whenever
+    it is a lower energy state, otherwise we accept with a probability
+    that decays exponentially in proportion to the difference of energies
+    and is affected by a temperature parameter. 
+    Parameters
+    ----------
+    e : double 
+        energy of current state
+    eprime : double
+        energy of proposed state
+    T : double
+    	current temperature parameter
+    """
+    if eprime < e:
+        p = 1
+    else:
+        p = exp(-(eprime - e)/T)
+    return p
 
+
+# ############# SAMPLING FUNCTIONS #######################
+# We sample gamma and pi from Dirichlet and Beta distributions
+# respectively by specifying means and variances. Optionally, we
+# can constraint on a sample Dt f-divergence, which will determine
+# asymptotic detectability. For the constrained sampling we use simulated annealing.
+
+
+def get_gamma_pi(
+	Q = 4, sampling = 'unconstrained',
+	vdir, mii, vii, mij, vij,
+	maxIter = 100, tol = 1e-07
+):
+    """
+    get_gamma_pi a function that samples gamma (the community
+    weights or community importance) from a homogeneous Dirichlet
+	distribution (which has mean, a uniform distribution)
+	and pi (the connection probabilities), by specifying
+	means and variances. Optionally, we can constraint the sample to 
+	have a target Dt f-divergence (E. Abbe and C. Sandon. 2015)
+	which will determine asymptotic detectability. For the constrained
+	sampling we use simulated annealing.
+    Parameters
+    ----------
+    Q : int 
+        the number of communities. Defaults to 4
+    sampling : str
+        the type of sampling to be made. The options are
+        'deterministic', 'unconstrained' and 'constrained'
+        which correspond to deterministic annealing 
+    vdir : double
+    	variance of the homogeneous dirichlet distribution
+    mii : double
+    	mean of the whithin community beta distributions
+    vii : double
+    	variance of the whithin community beta distributions
+    mij : double
+    	mean of the across community beta distributions
+    vii : double
+    	variance of the across community beta distributions
+    maxIter : int 
+    	maximum number of iterations for the simulated annealing
+    """
+    #Obtain the alphas with target var and assuming a uniform mean
+    if sampling not in {'constrained','unconstrained'}:
+    	sys.exit("Unsupported sampling type")
+
+    alpha = ((Q-1)/(vdir*Q^2)+1)/Q
+    gamma = npr.dirichlet(np.repeat(alpha, Q),1)
+    
+    #Beta parameters alpha_ii and beta_ii
+    alpha_ii = (mii^2*(1-mii) - mii*vii)/vii
+    beta_ii  = (1/vii)*(mii*(1-mii) - vii)*(1-mii)
+    #Beta parameters alpha_ij and beta_ij
+    alpha_ij = (mij^2*(1-mij) - mij*vij)/vij
+    beta_ij  = (1/vij)*(mij*(1-mij) - vij)*(1-mij)
+
+    pi = np.zeros((Q,Q))
+    for i in range(Q):
+    	for j in range(Q):
+    		if i == j:
+    			pi[i,j] = npr.beta(alpha_ii,beta_ii)/2
+
+    		if i < j:
+    			pi[i,j] = npr.beta(alpha_ij,beta_ij)
+
+    pi = pi + np.transpose(pi)
+
+    if sampling == 'unconstrained':
+    	return gamma, pi
+
+    print('Beggining constrained sampling with:{:d} iterations'.format(numIter))
+    print('---------------------------------------------------')
+	print('')    
 
 def get_pi(m):
 
@@ -72,19 +166,6 @@ def sample_Z(gamma, N):
     Z = npr.multinomial(1, gamma, N)
 
     return Z.astype(float)
-
-
-def get_gamma(m):
-
-    gamma = list()
-
-    gamma.append(np.array([0.4773, 0.3043, 0.1458, 0.0725]))
-    gamma.append(np.array([0.2650, 0.2580, 0.2499, 0.2271]))  # Tweak to make it easier
-    gamma.append(np.array([0.3597, 0.2641, 0.2617, 0.1145]))
-    gamma.append(np.array([0.3540, 0.3082, 0.2169, 0.1209]))
-
-    return gamma[m]/np.sum(gamma[m])
-
 
 def sample_X_und(Pi, Z):
 

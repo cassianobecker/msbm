@@ -1,7 +1,7 @@
 import numpy as np
 import scipy.special as sp
 
-# ################ CAVI UPDATE FUNCTIONS #########################
+# ################ UPDATE FUNCTIONS #########################
 
 
 def update_Pi(mom, data, prior, par):

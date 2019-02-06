@@ -32,6 +32,7 @@ def infer(mom, data, prior, par, alg='cavi'):
         plot.plot_elbos(elbos, par)
 
         ari_Y = adj_rand(mom['MU'], data['Y'])
+        #mean adjusted rand index for Z
         mari_Z = np.mean(adj_rand_Z(mom, data))
 
         lbs = np.append(lbs, elbo)
@@ -79,7 +80,7 @@ def infer(mom, data, prior, par, alg='cavi'):
         # ##################### NATGRAD IMPLEMENTATION #######################
 
         if alg == 'natgrad':
-
+            #Step Lengths
             s_t1 = 0.5
             s_t2 = 0.5
             mom_new = dict()
