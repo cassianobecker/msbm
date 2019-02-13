@@ -2,6 +2,49 @@ import numpy as np
 import numpy.random as npr
 import sys
 import pickle
+from random import randint
+import scipy as sp
+def SNR(gamma,pi):
+    """
+    Criterion for detectability on the general SBM for community weights gamma
+    and connectivity matrix pi
+    Parameters
+    ----------
+    gamma : double array 
+        probability vector representing community weights
+    pi : double array
+        vector of probabilities representing inter connection probabilities
+    """
+    #We construct the matrix whose columns are the community profiles
+    PQ = np.matmul(np.diag(gamma),pi)
+    snr = 500
+    #Iterate over all different pairs of columns
+    for i in range(0,PQ.shape[2]-1):
+    	for j in range(0,PQ.shape[2]-1):
+    		if i != j:
+    			snr = min(snr, CHDiv(PQ[:,i],PQ[:,j]))
+    return snr
+
+def CHDiv(theta_i,theta_j):
+    """
+    Chernoff-Hellinger divergence of two community profiles
+    detectability depends on whether the CHDiv is greater than 1.
+    This is an f-divergence and a generalization of relative-entropy.
+    Parameters
+    ----------
+    theta_i : double array 
+        profile for community i
+    theta_j : double array
+        profile for community j
+    """
+    #Define the function f
+    def fun(t):
+    	return -np.sum(t*theta_i + (1-t)*theta_j - (theta_i**t)*(theta_j**(1-t)))
+
+    #Minimize over t
+    res = np.optimize.minimize(fun,[0.5],bounds= ((0,1)))
+    chdiv = -fun(res.x)
+    return chdiv
 
 def accept_prob(e,eprime,T):
     """
@@ -34,8 +77,8 @@ def accept_prob(e,eprime,T):
 
 
 def get_gamma_pi(
-	Q = 4, sampling = 'unconstrained',
-	vdir, mii, vii, mij, vij,
+	vdir, mii, vii, mij, vij, 
+	Q = 4, sampling = 'unconstrained', SNR=None,
 	maxIter = 100, tol = 1e-07
 ):
     """
@@ -65,6 +108,8 @@ def get_gamma_pi(
     	mean of the across community beta distributions
     vii : double
     	variance of the across community beta distributions
+    SNR : double
+    	target signal to noise ratio for constrained sampling
     maxIter : int 
     	maximum number of iterations for the simulated annealing
     """
@@ -96,55 +141,45 @@ def get_gamma_pi(
     if sampling == 'unconstrained':
     	return gamma, pi
 
-    print('Beggining constrained sampling with:{:d} iterations'.format(numIter))
+    print('Beggining constrained sampling with:{:d} iterations'.format(maxIter))
     print('---------------------------------------------------')
-	print('')    
+    T_init= 100
+    if SNR is None:
+    	sys.exit("Unspecified SNR. The detectability threshold is SNR = 1")
+    counter = 0
+    cSNR = SNR(gamma, pi)
+    e = (SNR - cSNR)^2
+    while counter <= maxIter and e > tol:
+		print('Iteration:{:d}, Target SNR: {:03f}, Current SNR: {:03f}, Energy: {:06f}'.format(counter,SNR,cSNR,e))
+		#We do the local step and compute the energy of that state
+		counter += 1
+		if npr.binomial(1, 0.7, 1) == 1:
+			pi_prime = pi
+			#Select an entry at random and resample from the prior beta
+			ind_i = randint(0,Q-1)
+			ind_j = randint(0,Q-1)
+			new_value = npr.beta(alpha_ii,beta_ii)
+			pi_prime[ind_i,ind_j] = new_value
+			pi_prime[ind_j,ind_i] = new_value
+			gamma_prime = gamma
+		else: 
+			gamma_prime = npr.dirichlet(np.repeat(alpha, Q),1)
+			gamma_prime = 0.95*gamma_prime + 0.05*gamma
+			pi_prime = pi
 
-def get_pi(m):
-
-    # M = 0.3
-    # H = 0.7
-    # L = 0.1
-
-    Pi = list()
-
-#    Pi.append(np.array([[H, L, L],
-#                        [L, H, L],
-#                        [L, L, H]]))
-
-    Pi.append(np.array([[0.2176, 0.0185, 0.0836, 0.1015],
-                        [0.0614, 0.4529, 0.0327, 0.0008],
-                        [0.0048, 0.0642, 0.4515, 0.1021],
-                        [0.0192, 0.0403, 0.0800, 0.4061]]))
-
-#    Pi.append(np.array([[H, M, M],
-#                        [M, H, M],
-#                        [M, M, H]]))
-
-    Pi.append(np.array([[0.6789, 0.0293, 0.0437, 0.1759],
-                        [0.1498, 0.6418, 0.0317, 0.0043],
-                        [0.0057, 0.1007, 0.4528, 0.1595],
-                        [0.2032, 0.1081, 0.3031, 0.4716]]))
-
-#    Pi.append(np.array([[M, L, L],
-#                        [L, M, L],
-#                        [L, L, M]]))
-
-    Pi.append(np.array([[0.5706, 0.0187, 0.0697, 0.0196],
-                        [0.0108, 0.3748, 0.0352, 0.0887],
-                        [0.0047, 0.0349, 0.2650, 0.1951],
-                        [0.0008, 0.0432, 0.0012, 0.4281]]))
-
-#    Pi.append(np.array([[M, M, M],
-#                        [M, M, M],
-#                        [M, M, M]]))
-
-    Pi.append(np.array([[0.3659, 0.1162, 0.0579, 0.0148],
-                        [0.1144, 0.4836, 0.0219, 0.0475],
-                        [0.0627, 0.0016, 0.4275, 0.1200],
-                        [0.0803, 0.1355, 0.0054, 0.2231]]))
-
-    return Pi[m]
+		cSNR_prime = SNR(gamma_prime, pi_prime)
+		eprime = (SNR - cSNR_prime)
+		#We obtain the acceptance probability   
+		p = accept_prob(e,eprime,T_init/counter^2)
+		print('Acceptance probaility: {:04f}'.format(p))
+		if npr.binomial(1, p, 1) == 1:
+			e = eprime
+			gamma = gamma_prime
+			pi = pi_prime
+			cSNR = cSNR_prime
+	print('Finished simulated annealing after:{:d} iterations '.format(counter))
+	print('Resulting SNR is:{:03f}, target was {:03f} '.format(cSNR,SNR))
+	return gamma, pi
 
 
 def get_rho():

@@ -1,11 +1,8 @@
 import sys
 import pickle
-
 import msbm
 import varinf
-
 import init_msbm as im
-
 
 # ################ INITIALIZATION FUNCTIONS ###############
 
@@ -23,8 +20,8 @@ def test_varinf(data_file_url, out_file_url):
     data, par = load_data(data_file_url)
 
     # override hyper-parameters from data
-    # par['Q'] = 3
-    # par['M'] = 2
+    # par['Q'] = 3 
+    # par['M'] = 2 
 
     mom, prior = im.init_moments(par)
 
