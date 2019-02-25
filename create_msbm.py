@@ -112,7 +112,7 @@ def accept_prob(e,eprime,T):
 
 def get_gamma_pi(
 	dii, dij,vdir = 0.015, 
-	Q = 4, sampling = 'unconstrained', SNR=None,
+	Q = 4, sampling = 'constrained', SNR=None,
 	maxIter = 100, tol = 1e-07, n = 100, verbose = False):
 	"""
 	get_gamma_pi a function that samples gamma (the community
@@ -269,31 +269,69 @@ def get_gamma_pi(
 	if verbose == True:
 		print('Finished simulated annealing after:{:d} iterations '.format(counter-1))
 		print('Resulting SNR is:{:04f}, target was {:04f} '.format(cSNR,SNR))
-	return gamma, pi
+	return gamma.astype(float), pi.astype(float)
 
 
-def get_rho():
+def get_rho(M, vdir = 0.025):
+	"""
+	Sample the vector of cluster weights, i.e. the proportion of 
+	networks of each prototype
+	Parameters
+	----------
+	vdir : double 
+		variance of the dirichlet distribution (with uniform mean) used to sample
+	M : integer
+		Number of clusters or prototypes
+	"""
+	alpha = ((M-1)/(vdir*Q**2)+1)/M
+	rho = npr.dirichlet(np.repeat(alpha, M),1)
 
-	rho = np.array([0.2, 0.5, 0.7, 0.3])
-
-	return rho/np.sum(rho)
+	return rho.astype(float)
 
 
 def sample_Y(rho, K):
-
+	"""
+	Sample the vector of cluster memberships, i.e. the type
+	of each network
+	Parameters
+	----------
+	rho : double array 
+		the cluster weights or prior probabilities
+	K : integer
+		Number of networks
+	"""
 	Y = npr.multinomial(1, rho, K)
 
 	return Y.astype(float)
 
 
 def sample_Z(gamma, N):
-
+	"""
+	Sample the vectors of community memberships, i.e. the type
+	of each network for a given vector of community memberships
+	Parameters
+	----------
+	gamma : double array 
+		the community weights of the given prototype
+	N : integer
+		Number of nodes
+	"""
 	Z = npr.multinomial(1, gamma, N)
 
 	return Z.astype(float)
 
-def sample_X_und(Pi, Z):
-
+def sample_X_und(pi, Z):
+	"""
+	Sample the edges of the network given the connectivity 
+	profile pi and the realized community memberships Z
+	Parameters
+	----------
+	pi : double array 
+		the QxQ symmetric matrix of connection probabilities
+	Z : integer array
+		vector of N multinomials (in 0-1 expanded notation)
+		 representing community memberships
+	"""
 	N = Z.shape[0]
 	X = np.zeros((N, N))
 	for i in range(N):
@@ -307,24 +345,53 @@ def sample_X_und(Pi, Z):
 
 
 # ############### MODEL CREATION ################
-
-
-def create_msbm(Q, N, M, K):
-
-	print('---- Creating MSBM mode with N = {:d} and K = {:d} ------'
-		  .format(N, K))
-
-	RHO = get_rho()
-
+def create_msbm(
+	Q, N, M, K,
+	dii = 36.0, dij = 2.0,
+	SNR = 1.05,
+	path_data = 'data',
+	fname = 'msbm',
+	verbose = False):
+	"""
+	Sample multiple networks according to the MSBM model according to 
+	the given parameters and a target Chernof-Hellinger divergence SNR.
+	Parameters
+	----------
+	Q : integer 
+		number of communities in each network
+	N : integer
+		number of nodes in each network
+	M : integer
+		number of different SBM models
+	K : integer
+		number of networks to sample
+	dii : double
+		dii*log(n) is the expected in-degree
+	dii : double
+		dii*log(n) is the expected in-degree
+	SNR : double
+		the Chernof-Hellinger divergence of all the prototypes,
+		we want it to be greater than 1 so that the communities are detectable.
+	path_data : string
+		the folder where data is to be stored for the current experiment
+	fname : sting
+		name of the pickle file for persistance
+	verbose : boolean
+		set to True to obtain details during the execution
+	"""
+	if verbose == True:
+		print('---- Creating MSBM mode with N = {:d}, K = {:d}, Q = {:d} and M = {:d} ------'
+		  .format(N, K, Q, M))
+	#Sample the cluster memberships
+	RHO = get_rho(M)
 	Y = sample_Y(RHO, K)
 
 	GAMMA = np.zeros((M, Q))
-	for m in range(M):
-		GAMMA[m, :] = get_gamma(m)
-
 	PI = np.zeros((M, Q, Q))
 	for m in range(M):
-		PI[m, :] = get_pi(m)
+		GAMMA[m, :], PI[m, :] = get_gamma_pi(
+		dii = dii, dij= dij, Q = Q, SNR = SNR,
+		maxIter = 80000, tol = 1e-5, n = N, verbose= verbose)
 
 	Z = np.zeros((K, N, Q))
 	X = np.zeros((K, N, N))
@@ -338,6 +405,9 @@ def create_msbm(Q, N, M, K):
 	par['N'] = N
 	par['M'] = M
 	par['K'] = K
+	par['dii'] = dii
+	par['dij'] = dij
+	par['SNR'] = SNR
 
 	data = dict()
 	data['RHO'] = RHO
@@ -346,6 +416,14 @@ def create_msbm(Q, N, M, K):
 	data['PI'] = PI
 	data['Z'] = Z
 	data['X'] = X
+
+	#persistance
+	data_file_url = path_data + '/' + fname + '.pickle'
+	if verbose==True:
+		print('Saving file to {:s} ... '.format(data_file_url), end='')
+	pickle.dump({'data': data, 'par': par}, open(data_file_url, 'wb'))
+	if verbose == True:
+		print('save succesful')
 
 	return data, par
 
@@ -358,37 +436,22 @@ def find_row(x):
 
 
 def main():
-	gamma, pi = get_gamma_pi(
-	vdir = 0.0065, dii = 36.0, dij= 4.0,  
-	Q = 4, sampling = 'constrained', SNR = 0.6,
-	maxIter = 80000, tol = 1e-5, n = 100, verbose= True)
+	#Optionally parse input from reactive call to function
+	if len(sys.argv) < 2:
+		 path_data = 'data'
+		 fname = 'demo_data'
+	else:
+		path_data = sys.argv[1]
+		fname = sys.argv[2]
+
+	data, par = create_msbm(
+	Q = 4, N = 200, M = 3, K = 50,
+	dii = 36.00, dij = 2.0,
+	SNR = 1.05,
+	path_data = path_data,
+	fname = fname,
+	verbose = True)
 	SystemExit(0)
-	# initialize file names
-	# if len(sys.argv) < 2:
-	#	 path_data = 'data'
-	#	 fname = 'msbm1'
-	#	 data_file_url = path_data + '/' + fname + '.pickle'
-
-	# else:
-	#	 data_file_url = sys.argv[1]
-
-	# # number of classes
-	# Q = 4
-	# # number of nodes
-	# N = 150
-	# # number of models
-	# M = 4
-	# # number of networks
-	# K = 80
-
-	# # sample model
-	# data, par = create_msbm(Q, N, M, K)
-
-	# # save to file
-	# print('Saving file to {:s} ... '.format(data_file_url), end='')
-	# pickle.dump({'data': data, 'par': par}, open(data_file_url, 'wb'))
-	# print('saved.')
-
 
 if __name__ == '__main__':
 
