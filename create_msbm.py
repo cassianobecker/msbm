@@ -360,8 +360,8 @@ def find_row(x):
 def main():
 	gamma, pi = get_gamma_pi(
 	vdir = 0.0065, dii = 36.0, dij= 4.0,  
-	Q = 3, sampling = 'constrained', SNR = 0.6,
-	maxIter = 60000, tol = 1e-5, n = 100, verbose= True)
+	Q = 4, sampling = 'constrained', SNR = 0.6,
+	maxIter = 80000, tol = 1e-5, n = 100, verbose= True)
 	SystemExit(0)
 	# initialize file names
 	# if len(sys.argv) < 2:
