@@ -11,14 +11,16 @@ from scipy import optimize
 
 def getavgDeg(gamma, pi,n):
 	"""
-	Criterion for detectability on the general SBM for community weights gamma
-	and connectivity matrix pi
+	Obtain the average degree for an n-node network with community
+	weights gamma and connectivity matrix pi
 	Parameters
 	----------
 	gamma : double array 
 		probability vector representing community weights
 	pi : double array
 		vector of probabilities representing inter connection probabilities
+	n : integer
+		number of nodes
 	"""
 	#We construct the matrix whose columns are the community profiles
 	PQ = np.matmul(np.diag(gamma[0]),pi)
@@ -69,13 +71,13 @@ def CHDiv(theta_i,theta_j):
 	theta_j : double array
 		profile for community j
 	"""
-	#Define the function f
-	def fun(t):
+	#Obtain the f-divergence associated with t
+	def fdiv(t):
 		return -np.sum(t*theta_i + (1-t)*theta_j - (theta_i**t)*(theta_j**(1-t)))
 
 	#Minimize over t
-	res = optimize.minimize(fun,(0.5),bounds= ((0,1),))
-	chdiv = -fun(res.x)
+	res = optimize.minimize(fdiv,(0.5),bounds= ((0,1),))
+	chdiv = -fdiv(res.x)
 	return chdiv
 
 def accept_prob(e,eprime,T):
@@ -111,7 +113,7 @@ def accept_prob(e,eprime,T):
 def get_gamma_pi(
 	dii, dij,vdir = 0.015, 
 	Q = 4, sampling = 'unconstrained', SNR=None,
-	maxIter = 100, tol = 1e-07, n = 100):
+	maxIter = 100, tol = 1e-07, n = 100, verbose = False):
 	"""
 	get_gamma_pi a function that samples gamma (the community
 	weights or community importance) from a homogeneous Dirichlet
@@ -142,6 +144,8 @@ def get_gamma_pi(
 	n : int
 		the number of nodes. Defaults to 100. It's used to produce a logarithmic degree
 		interconnection matrix pi. 
+	verbose : boolean
+		set to false to run the function quietly.
 	"""
 	#Obtain the alphas with target var and assuming a uniform mean
 	if sampling not in {'constrained','unconstrained'}:
@@ -152,13 +156,13 @@ def get_gamma_pi(
 	
 	#Beta parameters alpha_ii and beta_ii
 	mii = np.double(dii)/n
-	vii = (np.double(dii)/20)/(n)
+	vii = (np.double(dii)/10)/(n)
 
 	alpha_ii = ((mii**2)*(1-mii) - mii*vii)/vii
 	beta_ii  = (1/vii)*(mii*(1-mii) - vii)*(1-mii)
 	#Beta parameters alpha_ij and beta_ij
 	mij = np.double(dij)/n
-	vij = (np.double(dij)/20)/(n)
+	vij = (np.double(dij)/10)/(n)
 	alpha_ij = ((mij**2)*(1-mij) - mij*vij)/vij
 	beta_ij  = (1/vij)*(mij*(1-mij) - vij)*(1-mij)
 
@@ -175,8 +179,9 @@ def get_gamma_pi(
 	if sampling == 'unconstrained':
 		return gamma, pi
 
-	print('Beggining constrained sampling with:{:d} iterations'.format(maxIter))
-	print('---------------------------------------------------')
+	if verbose == True:
+		print('Beggining constrained sampling with:{:d} iterations'.format(maxIter))
+		print('---------------------------------------------------')
 	T_init= 1.01
 	#Normalize the average degree of the network to its expected value
 	targetDeg = (np.double(dii) + (Q-1)*np.double(dij))/Q
@@ -185,21 +190,45 @@ def get_gamma_pi(
 	if SNR is None:
 		sys.exit("Unspecified SNR. The detectability threshold is SNR = 1")
 	counter = 0
+	iteration = 0
 	pi_constant = pi * (n/np.log(n))
 	cSNR, com_i, com_j  = getSNR(gamma,pi_constant)
 
 	e = (SNR - cSNR)**2
 	while counter <= maxIter and e > tol:
 		avgDeg =  getavgDeg(gamma,pi * (n/np.log(n)),n)
-		if counter % 1 == 0:
-			print('Iteration:{:d}, Target SNR: {:03f}, Current SNR: {:03f}, Energy: {:08f}, avgDeg: {:03f}'.format(counter,SNR,cSNR,e,avgDeg))
+		if counter % 25 == 0 and verbose == True:
+			print('Iter:{:d}, objSNR: {:03f}, current_SNR: {:03f}, Energy: {:08f}, avgDeg: {:03f}'.format(counter,SNR,cSNR,e,avgDeg))
 		counter += 1
+		iteration += 1
+		#We restart the simulated annealing every 10000 iterations
+		if counter % 20000 == 0:
+			if verbose == True:
+				time.sleep(1.5)
+				print('Restarting Simulated Annealing')
+			gamma = npr.dirichlet(np.repeat(alpha, Q),1)
+			pi = np.zeros((Q,Q))
+			for i in range(Q):
+				for j in range(Q):
+					if i == j:
+						pi[i,j] = npr.beta(alpha_ii,beta_ii)/2
+
+					if i < j:
+						pi[i,j] = npr.beta(alpha_ij,beta_ij)
+
+			pi = pi + np.transpose(pi)			
+			T_init= 1.01
+			avgDeg = getavgDeg(gamma,pi * (n/np.log(n)),n)
+			pi = pi * targetDeg/avgDeg
+			iteration = 1
+		#End the restarting if
 		pi_prime = pi
 		gamma_prime = gamma
 		#We do the local step and compute the energy of that state
 		#With probability .5 we change gamma with probability .5 we change pi
 		#We do a random step where the average degree of the network is preserved
-		if npr.binomial(1, .5, 1) == 1:
+		p_or_g = npr.binomial(1, .5, 1)
+		if p_or_g == 1:
 			xx = npr.binomial(1, .5, 1)[0]
 			ind_i = xx*com_i + (1-xx)*com_j
 			ind_j = randint(0,Q-1)
@@ -209,10 +238,11 @@ def get_gamma_pi(
 			else:
 				new_value = npr.beta(alpha_ij,beta_ij)
 			pi_prime[ind_i,ind_j] = 0.99*pi_prime[ind_i,ind_j] + 0.01*new_value
-			pi_prime[ind_j,ind_i] = 0.99*pi_prime[ind_j,ind_i] + 0.01*new_value
+			pi_prime[ind_j,ind_i] = 0.99*pi_prime[ind_j,ind_i] + 0.01*new_value	
 		#And for gamma
 		else:
 			gamma_prime = 0.99*gamma_prime + 0.01*npr.dirichlet(np.repeat(alpha, Q),1)
+
 		#We renormalize to preserve the average degree
 		avgDeg_prime = getavgDeg(gamma_prime,pi_prime * (n/np.log(n)),n)
 		pi_prime = pi_prime * (targetDeg/avgDeg_prime)
@@ -222,40 +252,23 @@ def get_gamma_pi(
 		cSNR_prime, com_i_prime, com_j_prime = getSNR(gamma_prime, pi_prime_constant)
 
 		eprime = (SNR - cSNR_prime)**2
-		if(counter > 1500):
-			pdb.set_trace()
-			print("Current min divergence communities:")
-			print("Communities: {:d} and {:d}".format(com_i,com_j))
-			print("Active Community Profiles")
-			PQ = np.matmul(np.diag(gamma[0]),pi_constant)
-			prof_i = PQ[:,com_i]
-			prof_j = PQ[:,com_j]
-			print(np.array[prof_i,prof_j])
-			print("proposed SNR")
-			print(cSNR_prime)
-			print("Current pi_constant")
-			print(pi_constant * np.log(n))
-			print("Proposed pi_constant")
-			print(pi_prime_constant * np.log(n))
-			print("Difference:")
-			print((pi_prime_constant-pi_constant)*np.log(n))
-			print("----------------")
 		#We obtain the acceptance probability
-		p = accept_prob(e,eprime,T_init/(counter))
-		if(counter > 1500):
-			pdb.set_trace()
+		p = accept_prob(e,eprime,T_init/(iteration))
+		# if(counter > 5000) and (counter % 25 == 0):
+		# 	pdb.set_trace()
 		if npr.binomial(1, p, 1) == 1:
-			if(eprime > e): print("Jumping to state with higher Energy")
+			if(eprime > e) and verbose==True:
+				print("Jumping to state with higher Energy")
 			e = eprime
 			gamma = gamma_prime
 			pi = pi_prime
-			pi_constant = pi * (n/np.log(n))
 			cSNR = cSNR_prime
 			com_i = com_i_prime
 			com_j = com_j_prime
-		print("-----------------")
-	print('Finished simulated annealing after:{:d} iterations '.format(counter-1))
-	print('Resulting SNR is:{:04f}, target was {:04f} '.format(cSNR,SNR))
+			pi_constant = pi * (n/np.log(n))
+	if verbose == True:
+		print('Finished simulated annealing after:{:d} iterations '.format(counter-1))
+		print('Resulting SNR is:{:04f}, target was {:04f} '.format(cSNR,SNR))
 	return gamma, pi
 
 
@@ -346,11 +359,9 @@ def find_row(x):
 
 def main():
 	gamma, pi = get_gamma_pi(
-	vdir = 0.0065, dii = 20.0, dij= 2.0,  
-	Q = 4, sampling = 'constrained', SNR=1,
-	maxIter = 10000, tol = 1e-5, n = 100)
-	print(gamma)
-	print(pi)
+	vdir = 0.0065, dii = 36.0, dij= 4.0,  
+	Q = 3, sampling = 'constrained', SNR = 0.6,
+	maxIter = 60000, tol = 1e-5, n = 100, verbose= True)
 	SystemExit(0)
 	# initialize file names
 	# if len(sys.argv) < 2:
