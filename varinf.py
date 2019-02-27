@@ -1,7 +1,7 @@
 import msbm
 import plot
 from util import *
-import init_msbm as im
+import init_msbm_vi as im
 
 
 # ################### MAIN CAVI PROGRAM #####################
@@ -11,7 +11,7 @@ def sigmoid(x):
     return 1 / (1 + np.exp(-x))
 
 
-def infer(mom, data, prior, par, alg='cavi'):
+def infer(mom, data, prior, par, alg='natgrad'):
     print('##############################################################')
     print('                RUNNING ' + str.upper(alg) + ' FOR MSBM        ')
     print('                K = {:d}, M = {:d}, N = {:d}, Q = {:}'.
