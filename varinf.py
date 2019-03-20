@@ -1,5 +1,6 @@
 import msbm
 import plot
+from scipy import sparse
 from util import *
 import init_msbm_vi as im
 
@@ -28,23 +29,23 @@ def infer(mom, data, prior, par, alg='natgrad'):
 
         par['kappa'] = kappas[t]
 
-        elbos, elbo = msbm.compute_elbos(elbos, mom, data, prior, par)
+        elbos = msbm.compute_elbos(mom, data, prior, par, elbos)
         plot.plot_elbos(elbos, par)
 
         ari_Y = adj_rand(mom['MU'], data['Y'])
         #mean adjusted rand index for Z
         mari_Z = np.mean(adj_rand_Z(mom, data))
 
-        lbs = np.append(lbs, elbo)
+        lbs = np.append(lbs, elbos['total'][-1])
 
         if 'Y' in data.keys():
             print(
                 'Iter: {:3d} of {:3d} (kappa = {:.4f}) --- elbo: {:+.5e}, | ari(Y): {:+.3f} | avg. ari(Z): {:+.3f} |'.format(
-                    t + 1, T, par['kappa'], elbo, ari_Y, mari_Z))
+                    t + 1, T, par['kappa'], elbos['total'][-1], ari_Y, mari_Z))
         else:
             print(
                 'Iter: {:3d} of {:3d} (kappa = {:.4f}) --- elbo: {:+.5e}'.format(
-                    t + 1, T, par['kappa'], elbo))
+                    t + 1, T, par['kappa'], elbos['total'][-1]))
 
         # ####################### CAVI IMPLEMENTATION ########################
 

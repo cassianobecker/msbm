@@ -12,6 +12,7 @@ from random import randint
 import scipy as sp
 from scipy.stats import beta
 from scipy import optimize
+from scipy import sparse
 
 def getavgDeg(gamma, pi,n):
 	"""
@@ -393,6 +394,8 @@ def create_msbm(
 	GAMMA = np.zeros((M, Q))
 	PI = np.zeros((M, Q, Q))
 	for m in range(M):
+		if verbose == True:
+			print("GENERATING PROTOTYPE NUMBER: {:d}".format(m))
 		GAMMA[m, :], PI[m, :] = get_gamma_pi(
 		dii = dii, dij= dij, Q = Q, SNR = SNR,
 		maxIter = 80000, tol = 1e-5, n = N, verbose= verbose)
@@ -455,9 +458,7 @@ def main():
 	fname = fname,
 	verbose = True)
 
-	print(data)
-	print(par)
-
+	print(data['PI'])
 if __name__ == '__main__':
 
 	main()

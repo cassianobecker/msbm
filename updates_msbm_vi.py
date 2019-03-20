@@ -213,8 +213,9 @@ def compute_elbo(mom, data, prior, par):
     return sum(elbo.values())
 
 
-def compute_elbos(elbos, mom, data, prior, par):
-
+def compute_elbos(mom, data, prior, par, elbos = None):
+    if elbos is None:
+        elbos = dict()
     if len(list(elbos.keys())) == 0:
         elbos['x'] = list()
         elbos['rho'] = list()
@@ -222,7 +223,7 @@ def compute_elbos(elbos, mom, data, prior, par):
         elbos['gamma'] = list()
         elbos['y'] = list()
         elbos['z'] = list()
-        elbos['all'] = list()
+        elbos['total'] = list()
 
     elbos['x'].append(elbo_x(mom, data, prior, par))
     elbos['rho'].append(elbo_rho(mom, data, prior, par))
@@ -232,6 +233,6 @@ def compute_elbos(elbos, mom, data, prior, par):
     elbos['z'].append(elbo_z(mom, data, prior, par))
 
     elbo = sum([elbos[key][-1] for key in elbos.keys() if key is not 'all'])
-    elbos['all'].append(elbo)
+    elbos['total'].append(elbo)
 
-    return elbos, elbo
+    return elbos

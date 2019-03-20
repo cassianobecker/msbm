@@ -4,8 +4,6 @@ import numpy.random as npr
 
 def init_moments(par):
 
-    npr.seed(1)
-
     prior = dict()
     prior['ALPHA_0'] = 0.5
     prior['BETA_0'] = 0.5
