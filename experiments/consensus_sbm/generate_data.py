@@ -15,12 +15,12 @@ def main():
 	for detec in np.arange(0.8,1.25,0.05):
 		print("generating networks with SNR:{}".format(detec))
 		data, par = gn.create_msbm(
-		Q= 4, N = 120, M = 1, K = 100,
-		dii = 36.0, dij = 2.0,
+		Q= 3, N = 120, M = 1, K = 100,
+		dii = 32.0, dij = 3.0, tol = 1e-08,
 		SNR = detec,
 		path_data = 'data',
-		fname = 'consensus_{:3.0f}'.format(100*detec),
-		verbose = False)
+		fname = 'consensus_{:03.0f}'.format(100*detec),
+		verbose = True)
 	sys.exit()
 
 if __name__ == '__main__':

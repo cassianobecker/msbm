@@ -118,7 +118,7 @@ def accept_prob(e,eprime,T):
 def get_gamma_pi(
 	dii, dij,vdir = 0.015, 
 	Q = 4, sampling = 'constrained', SNR=None,
-	maxIter = 100, tol = 1e-07, n = 100, verbose = False):
+	maxIter = 100, tol = 1e-08, n = 100, verbose = False):
 	"""
 	get_gamma_pi a function that samples gamma (the community
 	weights or community importance) from a homogeneous Dirichlet
@@ -225,6 +225,8 @@ def get_gamma_pi(
 			T_init= 1.01
 			avgDeg = getavgDeg(gamma,pi * (n/np.log(n)),n)
 			pi = pi * targetDeg/avgDeg
+			pi_constant = pi * (n/np.log(n))
+			cSNR, com_i, com_j  = getSNR(gamma,pi_constant)
 			iteration = 1
 		#End the restarting if
 		pi_prime = pi
@@ -408,6 +410,7 @@ def create_msbm(
 		X[k, :] = sample_X_und(PI[m, :], Z[k, :])
 
 	par = dict()
+	#(TO DO)CHANGE TO DATA ALSO AND CHECK ALL FUNCTIONS THAT RELY ON THIS:
 	par['Q'] = Q
 	par['N'] = N
 	par['M'] = M

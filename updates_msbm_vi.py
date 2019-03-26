@@ -4,7 +4,7 @@ inference as well as computation of the ELBO
 """
 import numpy as np
 import scipy.special as sp
-
+import pdb
 # ################ UPDATE FUNCTIONS #########################
 
 
@@ -223,7 +223,7 @@ def compute_elbos(mom, data, prior, par, elbos = None):
         elbos['gamma'] = list()
         elbos['y'] = list()
         elbos['z'] = list()
-        elbos['total'] = list()
+        elbos['all'] = list()
 
     elbos['x'].append(elbo_x(mom, data, prior, par))
     elbos['rho'].append(elbo_rho(mom, data, prior, par))
@@ -231,8 +231,8 @@ def compute_elbos(mom, data, prior, par, elbos = None):
     elbos['gamma'].append(elbo_gamma(mom, data, prior, par))
     elbos['y'].append(elbo_y(mom, data, prior, par))
     elbos['z'].append(elbo_z(mom, data, prior, par))
-
-    elbo = sum([elbos[key][-1] for key in elbos.keys() if key is not 'all'])
-    elbos['total'].append(elbo)
+    
+    elbo = sum([elbos[key][-1] for key in elbos.keys() if key not in ['all']])
+    elbos['all'].append(elbo)
 
     return elbos

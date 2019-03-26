@@ -5,11 +5,19 @@ import numpy as np
 # ################# PERSISTANCE FUNCTIONS ##############
 def load_data(data_file_url):
 
-    print('\nLoading data from to {:s} ... '.format(data_file_url))
+    print('\nLoading data from {:s} ... '.format(data_file_url))
     loaded = pickle.load(open(data_file_url, 'rb'))
     print('loaded.')
-
+    #(TO DO) this should only return data
     return loaded['data'], loaded['par']
+
+def load_results(result_file_url):
+
+    print('\nLoading model from {:s} ... '.format(result_file_url))
+    loaded = pickle.load(open(result_file_url, 'rb'))
+    print('loaded.')
+    #(TO DO) this should only return data
+    return loaded['results_mom'], loaded['elbo_seq']
 
 # ################# AUXILIARY FUNCTIONS #################
 def find_col(idc):
@@ -34,3 +42,9 @@ def adj_rand_Z(mom, data):
     return aris
 
 #TO DO: Mean entropy of Z variables...
+def get_entropy_Z(mom, data):
+
+    ms = np.argmax(mom['MU'], axis=1)
+    #???
+
+    return aris

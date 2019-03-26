@@ -6,14 +6,6 @@ import init_msbm_vi as im
 
 # ################ INITIALIZATION FUNCTIONS ###############
 
-def load_data(data_file_url):
-
-    print('\nLoading data from to {:s} ... '.format(data_file_url), end='')
-    loaded = pickle.load(open(data_file_url, 'rb'))
-    print('loaded.')
-
-    return loaded['data'], loaded['par']
-
 
 def experiment_consensus(data_file_url, out_file_url):
 
@@ -28,7 +20,7 @@ def experiment_consensus(data_file_url, out_file_url):
     #Debugging purpose
     mom0, prior0 = im.init_moments_truth(par, data)
 
-    elbos, elbo0 = msbm.compute_elbos(mom0, data, prior, par)
+    elbos = msbm.compute_elbos(mom0, data, prior, par)
     par['elbos0'] = elbos0
 
     par['MAX_ITER'] = 100

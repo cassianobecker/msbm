@@ -1,4 +1,4 @@
-import msbm
+import updates_msbm_vi as msbm
 import plot
 from scipy import sparse
 from util import *
@@ -25,27 +25,29 @@ def infer(mom, data, prior, par, alg='natgrad'):
     kappas = sigmoid(np.linspace(-3, 10, T))
     elbos = dict()
 
+    #TO DO: Implement stopping criterion 
     for t in range(T):
 
         par['kappa'] = kappas[t]
 
         elbos = msbm.compute_elbos(mom, data, prior, par, elbos)
-        plot.plot_elbos(elbos, par)
+        #Unclear what this does, but it requires the key elbos0 which was deleted
+        #plot.plot_elbos(elbos, par)
 
         ari_Y = adj_rand(mom['MU'], data['Y'])
         #mean adjusted rand index for Z
         mari_Z = np.mean(adj_rand_Z(mom, data))
 
-        lbs = np.append(lbs, elbos['total'][-1])
+        lbs = np.append(lbs, elbos['all'][-1])
 
         if 'Y' in data.keys():
             print(
                 'Iter: {:3d} of {:3d} (kappa = {:.4f}) --- elbo: {:+.5e}, | ari(Y): {:+.3f} | avg. ari(Z): {:+.3f} |'.format(
-                    t + 1, T, par['kappa'], elbos['total'][-1], ari_Y, mari_Z))
+                    t + 1, T, par['kappa'], elbos['all'][-1], ari_Y, mari_Z))
         else:
             print(
                 'Iter: {:3d} of {:3d} (kappa = {:.4f}) --- elbo: {:+.5e}'.format(
-                    t + 1, T, par['kappa'], elbos['total'][-1]))
+                    t + 1, T, par['kappa'], elbos['all'][-1]))
 
         # ####################### CAVI IMPLEMENTATION ########################
 
