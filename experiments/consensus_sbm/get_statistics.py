@@ -36,7 +36,7 @@ def main():
         entro = np.mean(ut.get_entropy_Z(results_mom))
         entropy_list = np.append(entropy_list, entro)
 
-    stats_url = os.path.join('stats', 'stats_' + 'consensus')
+    stats_url = os.path.join('stats', 'stats_' + 'consensus.pickle')
     print('Saving file to {:s} ... '.format(stats_url))
     stats_dict = {'chd_list': chd_list, 'ari_list': ari_list, 'delta_elbo_list': delta_elbo_list, 'entropy_list': entropy_list}
     pickle.dump(stats_dict, open(stats_url, 'wb'))
