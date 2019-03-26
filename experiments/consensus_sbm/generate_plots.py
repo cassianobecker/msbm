@@ -14,6 +14,7 @@ def main():
 
     fig1 = plt.figure()
     plt.scatter(statistics['chd_list'], statistics['ari_list'])
+    plt.show()
 
     plot_file = os.path.join('plots', 'plot_' + 'consensus.svg')
     plt.savefig(plot_file, format="svg")
