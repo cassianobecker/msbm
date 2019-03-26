@@ -20,7 +20,7 @@ def infer(mom, data, prior, par, alg='natgrad'):
     print('##############################################################')
 
     T = par['MAX_ITER']
-    TS = [10]
+    TS = [1e10]
     lbs = np.array(0)
     kappas = sigmoid(np.linspace(-3, 10, T))
     elbos = dict()
@@ -107,6 +107,13 @@ def infer(mom, data, prior, par, alg='natgrad'):
             mom_new['ZETA'] = (1.0 - s_t1) * mom['ZETA'] + s_t1 * ZETA
 
             mom = mom_new
+
+        if t > 1:
+            rel_elbo = abs((lbs[-1] - lbs[-2]) / lbs[-2])
+            print('Relative Elbo: {:1.4e}'.format(rel_elbo))
+            if rel_elbo < par['TOL_ELBO']:
+                print('\nFinished (ELBO tolerance {:1.4e} achieved).'.format(par['TOL_ELBO']))
+                return mom, lbs
 
     print('\nFinished (maximum number of iterations).')
 

@@ -13,7 +13,7 @@ import varinf
 
 
 def main():
-    file_list = os.listdir('data')
+    file_list = sorted(os.listdir('data'))
 
     for data_file in file_list:
         # load data
@@ -25,7 +25,8 @@ def main():
         # hyper = {}/or get it from data
         mom, prior = im.init_moments(par)
         # set max iterations
-        par['MAX_ITER'] = 10
+        par['MAX_ITER'] = 50
+        par['TOL_ELBO'] = 1.e-14
         # (TO DO) infer should need only algorithmic pars
         results_mom, elbo_seq = varinf.infer(mom, data, prior, par, 'cavi')
         print('Saving file to {:s} ... '.format('models/model_' + data_file))
