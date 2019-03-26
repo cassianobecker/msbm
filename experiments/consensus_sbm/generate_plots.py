@@ -8,15 +8,15 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 def main():
-	stats_url = os.path.join('stats', 'stats_' + 'consensus.pickle')
+    stats_url = os.path.join('stats', 'stats_' + 'consensus.pickle')
     print("generating plots from: {}".format(stats_url))
     statistics = pickle.load(open(stats_url, 'rb'), encoding='latin1')
 
     fig1 = plt.figure()
-    plt.plot(statistics['chd_list'], statistics['ari_list'])
+    plt.scatter(statistics['chd_list'], statistics['ari_list'])
 
-    plot_file = os.path.join('plots', 'plot_' + 'consensus')
-    plt.savefig(, format="svg")
+    plot_file = os.path.join('plots', 'plot_' + 'consensus.svg')
+    plt.savefig(plot_file, format="svg")
     sys.exit()
 
 
