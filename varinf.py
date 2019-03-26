@@ -40,10 +40,20 @@ def infer(mom, data, prior, par, alg='natgrad'):
 
         lbs = np.append(lbs, elbos['all'][-1])
 
+        if t > 0:
+            rel_elbo = ((lbs[-1] - lbs[-2]) / abs(lbs[-2]))
+            # print('Relative Elbo: {:1.4e}'.format(rel_elbo))
+            if abs(rel_elbo) < par['TOL_ELBO']:
+                print('\nFinished (ELBO tolerance {:1.4e} achieved).'.format(par['TOL_ELBO']))
+                return mom, lbs
+        else:
+            rel_elbo = 0.
+
+
         if 'Y' in data.keys():
             print(
-                'Iter: {:3d} of {:3d} (kappa = {:.4f}) --- elbo: {:+.5e}, | ari(Y): {:+.3f} | avg. ari(Z): {:+.3f} |'.format(
-                    t + 1, T, par['kappa'], elbos['all'][-1], ari_Y, mari_Z))
+                'Iter: {:3d} of {:3d} (kappa = {:.4f}) --- elbo: {:+.5e}, | ari(Y): {:+.3f} | avg. ari(Z): {:+.3f} | delta elbo: {:+.4e} |'.format(
+                    t + 1, T, par['kappa'], elbos['all'][-1], ari_Y, mari_Z, rel_elbo))
         else:
             print(
                 'Iter: {:3d} of {:3d} (kappa = {:.4f}) --- elbo: {:+.5e}'.format(
@@ -108,12 +118,7 @@ def infer(mom, data, prior, par, alg='natgrad'):
 
             mom = mom_new
 
-        if t > 1:
-            rel_elbo = abs((lbs[-1] - lbs[-2]) / lbs[-2])
-            print('Relative Elbo: {:1.4e}'.format(rel_elbo))
-            if rel_elbo < par['TOL_ELBO']:
-                print('\nFinished (ELBO tolerance {:1.4e} achieved).'.format(par['TOL_ELBO']))
-                return mom, lbs
+
 
     print('\nFinished (maximum number of iterations).')
 
