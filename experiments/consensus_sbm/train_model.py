@@ -16,7 +16,8 @@ def main():
 
 	for data_file in file_list:
 		#load data
-		data, par = ut.load_data('data/' + data_file)
+		file_url = os.path.join('data', data_file)
+		data, par = ut.load_data(file_url)
 		#initialize moments
 		#(TO DO) init_moments should get a "hyper" instead of a par
 		# and it's responsibility of the user to provide it
@@ -27,7 +28,8 @@ def main():
 		#(TO DO) infer should need only algorithmic pars
 		results_mom, elbo_seq = varinf.infer(mom, data, prior, par, 'cavi')
 		print('Saving file to {:s} ... '.format('models/model_' + data_file))
-		pickle.dump({'results_mom': results_mom, 'elbo_seq': elbo_seq}, open('models/model_' + data_file, 'wb'))
+		out_file_url = os.path.join('models', 'model_' + data_file)
+		pickle.dump({'results_mom': results_mom, 'elbo_seq': elbo_seq}, open(out_file_url, 'wb'))
 	sys.exit()
 
 if __name__ == '__main__':
