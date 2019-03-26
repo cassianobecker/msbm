@@ -16,7 +16,7 @@ def main():
 		print("generating networks with SNR:{}".format(detec))
 		data, par = gn.create_msbm(
 		Q= 3, N = 120, M = 1, K = 100,
-		dii = 32.0, dij = 3.0, tol = 1e-08,
+		dii = 32.0, dij = 3.0, 
 		SNR = detec,
 		path_data = 'data',
 		fname = 'consensus_{:03.0f}'.format(100*detec),
