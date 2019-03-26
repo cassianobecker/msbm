@@ -1,6 +1,7 @@
 import sklearn.metrics as skm
 import pickle
 import numpy as np
+from scipy.special import entr
 
 # ################# PERSISTANCE FUNCTIONS ##############
 def load_data(data_file_url):
@@ -45,6 +46,6 @@ def adj_rand_Z(mom, data):
 def get_entropy_Z(mom, data):
 
     ms = np.argmax(mom['MU'], axis=1)
-    #???
+    entro = [entr(mom['TAU'][k, m, :]).sum(axis=1) for k, m in enumerate(ms)]
 
-    return aris
+    return entro

@@ -2,24 +2,10 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="7be446b6-dae1-460f-9d93-134eda94d97b" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/experiments/consensus_sbm/data/consensus_080.pickle" beforeDir="false" afterPath="$PROJECT_DIR$/experiments/consensus_sbm/data/consensus_080.pickle" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/experiments/consensus_sbm/data/consensus_085.pickle" beforeDir="false" afterPath="$PROJECT_DIR$/experiments/consensus_sbm/data/consensus_085.pickle" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/experiments/consensus_sbm/data/consensus_090.pickle" beforeDir="false" afterPath="$PROJECT_DIR$/experiments/consensus_sbm/data/consensus_090.pickle" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/experiments/consensus_sbm/data/consensus_095.pickle" beforeDir="false" afterPath="$PROJECT_DIR$/experiments/consensus_sbm/data/consensus_095.pickle" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/experiments/consensus_sbm/data/consensus_100.pickle" beforeDir="false" afterPath="$PROJECT_DIR$/experiments/consensus_sbm/data/consensus_100.pickle" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/experiments/consensus_sbm/data/consensus_105.pickle" beforeDir="false" afterPath="$PROJECT_DIR$/experiments/consensus_sbm/data/consensus_105.pickle" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/experiments/consensus_sbm/data/consensus_110.pickle" beforeDir="false" afterPath="$PROJECT_DIR$/experiments/consensus_sbm/data/consensus_110.pickle" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/experiments/consensus_sbm/data/consensus_115.pickle" beforeDir="false" afterPath="$PROJECT_DIR$/experiments/consensus_sbm/data/consensus_115.pickle" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/experiments/consensus_sbm/data/consensus_120.pickle" beforeDir="false" afterPath="$PROJECT_DIR$/experiments/consensus_sbm/data/consensus_120.pickle" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/experiments/consensus_sbm/generate_data.py" beforeDir="false" afterPath="$PROJECT_DIR$/experiments/consensus_sbm/generate_data.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/experiments/consensus_sbm/models/model_consensus_080.pickle" beforeDir="false" afterPath="$PROJECT_DIR$/experiments/consensus_sbm/models/model_consensus_080.pickle" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/experiments/consensus_sbm/models/model_consensus_085.pickle" beforeDir="false" afterPath="$PROJECT_DIR$/experiments/consensus_sbm/models/model_consensus_085.pickle" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/experiments/consensus_sbm/models/model_consensus_095.pickle" beforeDir="false" afterPath="$PROJECT_DIR$/experiments/consensus_sbm/models/model_consensus_095.pickle" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/experiments/consensus_sbm/models/model_consensus_105.pickle" beforeDir="false" afterPath="$PROJECT_DIR$/experiments/consensus_sbm/models/model_consensus_105.pickle" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/experiments/consensus_sbm/models/model_consensus_110.pickle" beforeDir="false" afterPath="$PROJECT_DIR$/experiments/consensus_sbm/models/model_consensus_110.pickle" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/experiments/consensus_sbm/models/model_consensus_115.pickle" beforeDir="false" afterPath="$PROJECT_DIR$/experiments/consensus_sbm/models/model_consensus_115.pickle" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/experiments/consensus_sbm/models/model_consensus_120.pickle" beforeDir="false" afterPath="$PROJECT_DIR$/experiments/consensus_sbm/models/model_consensus_120.pickle" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/generate_msbm.py" beforeDir="false" afterPath="$PROJECT_DIR$/generate_msbm.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/msbm.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/msbm.iml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/data/demo_data.pickle" beforeDir="false" afterPath="$PROJECT_DIR$/data/demo_data.pickle" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -32,8 +18,8 @@
       <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/generate_msbm.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="206">
-              <caret line="358" column="16" selection-start-line="358" selection-start-column="16" selection-end-line="358" selection-end-column="16" />
+            <state relative-caret-position="390">
+              <caret line="273" column="8" selection-start-line="273" selection-start-column="8" selection-end-line="273" selection-end-column="8" />
             </state>
           </provider>
         </entry>
@@ -69,11 +55,28 @@
               <item name="msbm" type="b2602c69:ProjectViewProjectNode" />
               <item name="msbm" type="462c0819:PsiDirectoryNode" />
             </path>
+            <path>
+              <item name="msbm" type="b2602c69:ProjectViewProjectNode" />
+              <item name="msbm" type="462c0819:PsiDirectoryNode" />
+              <item name="experiments" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="msbm" type="b2602c69:ProjectViewProjectNode" />
+              <item name="msbm" type="462c0819:PsiDirectoryNode" />
+              <item name="experiments" type="462c0819:PsiDirectoryNode" />
+              <item name="consensus_sbm" type="462c0819:PsiDirectoryNode" />
+            </path>
           </expand>
           <select />
         </subPane>
       </pane>
     </panes>
+  </component>
+  <component name="PropertiesComponent">
+    <property name="settings.editor.selected.configurable" value="preferences.intentionPowerPack" />
+  </component>
+  <component name="PyConsoleOptionsProvider">
+    <option name="myShowDebugConsoleByDefault" value="true" />
   </component>
   <component name="RunDashboard">
     <option name="ruleStates">
@@ -86,6 +89,31 @@
         </RuleState>
       </list>
     </option>
+  </component>
+  <component name="RunManager">
+    <configuration name="generate_msbm" type="PythonConfigurationType" factoryName="Python" temporary="true">
+      <module name="msbm" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/generate_msbm.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="true" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <recent_temporary>
+      <list>
+        <item itemvalue="Python.generate_msbm" />
+      </list>
+    </recent_temporary>
   </component>
   <component name="SvnConfiguration">
     <configuration />
@@ -105,16 +133,16 @@
     <editor active="true" />
     <layout>
       <window_info id="Favorites" side_tool="true" />
-      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.17976318" />
+      <window_info content_ui="combo" id="Project" order="0" visible="true" weight="0.17976318" />
       <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
       <window_info anchor="bottom" id="Version Control" />
-      <window_info anchor="bottom" id="Python Console" />
+      <window_info anchor="bottom" id="Python Console" weight="0.3297619" />
       <window_info anchor="bottom" id="Terminal" />
       <window_info anchor="bottom" id="Event Log" side_tool="true" />
       <window_info anchor="bottom" id="Message" order="0" />
       <window_info anchor="bottom" id="Find" order="1" />
       <window_info anchor="bottom" id="Run" order="2" />
-      <window_info anchor="bottom" id="Debug" order="3" weight="0.4" />
+      <window_info active="true" anchor="bottom" id="Debug" order="3" visible="true" weight="0.4" />
       <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
       <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
       <window_info anchor="bottom" id="TODO" order="6" />
@@ -128,8 +156,8 @@
   <component name="editorHistoryManager">
     <entry file="file://$PROJECT_DIR$/generate_msbm.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="206">
-          <caret line="358" column="16" selection-start-line="358" selection-start-column="16" selection-end-line="358" selection-end-column="16" />
+        <state relative-caret-position="390">
+          <caret line="273" column="8" selection-start-line="273" selection-start-column="8" selection-end-line="273" selection-end-column="8" />
         </state>
       </provider>
     </entry>
