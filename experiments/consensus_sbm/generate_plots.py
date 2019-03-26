@@ -14,6 +14,12 @@ def main():
 
     fig1 = plt.figure()
     plt.scatter(statistics['chd_list'], statistics['ari_list'])
+
+    plt.xlabel(r'detectability, $\delta$', fontsize=12)
+    plt.ylabel(r'average rand index, $\rho(z)$', fontsize=12)
+    plt.title(r"Consensus Mixture of SBM Performance",  fontsize=16)
+    plt.grid(True)
+
     plt.show()
 
     plot_file = os.path.join('plots', 'plot_' + 'consensus.svg')
