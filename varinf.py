@@ -1,117 +1,146 @@
 import updates_msbm_vi as msbm
-import plot
-import pdb
-from scipy import sparse
 from util import *
-import init_msbm_vi as im
+
+# ################### MAIN INFERENCE PROGRAM #####################
 
 
-# ################### MAIN CAVI PROGRAM #####################
+def get_default_parameters(par):
+
+    def sigmoid(x):
+        return 1 / (1 + np.exp(-x))
+
+    if 'kappas' not in par.keys():
+        par['kappas'] = sigmoid(np.linspace(-3, 10, par['MAX_ITER']))
+
+    if 'nat_step' not in par.keys():
+        par['nat_step'] = 0.5
+
+    par['MAX'] = 1000
+
+    return par
 
 
-def sigmoid(x):
-    return 1 / (1 + np.exp(-x))
+def get_relative_elbo(elbos):
+
+    if len(elbos['all']) > 1:
+        relative_elbo = ((elbos['all'][-1] - elbos['all'][-2]) / abs(elbos['all'][-2]))
+    else:
+        relative_elbo = abs(elbos['all'][-1])
+
+    return relative_elbo
 
 
-def infer(mom, data, prior, par):
+def check_stopping(t, par, elbos):
+
+    stop = False
+    reason = ''
+    relative_elbo = get_relative_elbo(elbos)
+
+    if abs(relative_elbo) < par['TOL_ELBO']:
+        stop = True
+        reason = 'STOPPED (ELBO tolerance {:1.4e} achieved).'.format(par['TOL_ELBO'])
+
+    if t == par['MAX_ITER'] - 1:
+        stop = True
+        reason = 'STOPPED (maximum number of iterations = {:d} achieved).'.format(par['MAX_ITER'])
+
+    return stop, reason
+
+
+def print_header(data, hyper, par):
+
     print('##############################################################')
-    print('                RUNNING ' + str.upper(alg) + ' FOR MSBM        ')
+    print('                RUNNING ' + str.upper(par['ALG']) + ' FOR MSBM        ')
     print('                K = {:d}, M = {:d}, N = {:d}, Q = {:}'.
-          format(data['K'], mom['NU'].shape[0], data['N'], mom['ALPHA'].shape[1]))
+          format(data['K'], hyper['M'], data['N'], hyper['Q']))
     print('##############################################################')
 
-    T = par['MAX_ITER']
-    lbs = np.array(0)
-    if 'KAPPAS' not in par.keys():
-        kappas = sigmoid(np.linspace(-3, 10, T))
+
+def print_status(t, data, mom, par, elbos):
+
+    ari_Y = adj_rand(mom['MU'], data['Y'])
+    mari_Z = np.mean(adj_rand_Z(mom, data))
+    relative_elbo = get_relative_elbo(elbos)
+
+    if 'Y' in data.keys():
+        print(
+            'Iter: {:3d} of {:3d} (kappa = {:.4f}) --- elbo: {:+.5e}, | ari(Y): {:+.3f} |'
+            'avg. ari(Z): {:+.3f} | delta elbo: {:+.4e} |'.format(
+                t + 1, par['MAX_ITER'], par['kappa'], elbos['all'][-1], ari_Y, mari_Z, relative_elbo))
+    else:
+        print(
+            'Iter: {:3d} of {:3d} (kappa = {:.4f}) --- elbo: {:+.5e}'.format(
+                t + 1, par['MAX_ITER'], par['kappa'], elbos['all'][-1]))
+
+
+def infer(data, prior, hyper, mom, par):
+
+    par = get_default_parameters(par)
+
+    print_header(data, hyper, par)
+
     elbos = dict()
-    alg = par['ALG']
-    #TO DO: Implement stopping criterion 
-    for t in range(T):
 
-        par['kappa'] = kappas[t]
+    for t in range(par['MAX']):
 
-        elbos = msbm.compute_elbos(mom, data, prior, par, elbos)
-        #Unclear what this does, but it requires the key elbos0 which was deleted
-        #plot.plot_elbos(elbos, par)
+        par['kappa'] = par['kappas'][t]
 
-        ari_Y = adj_rand(mom['MU'], data['Y'])
-        #mean adjusted rand index for Z
-        mari_Z = np.mean(adj_rand_Z(mom, data))
+        elbos = msbm.compute_elbos(data, prior, hyper, mom, par, elbos)
 
-        lbs = np.append(lbs, elbos['all'][-1])
+        print_status(t, data, mom, par, elbos)
 
-        if t > 0:
-            rel_elbo = ((lbs[-1] - lbs[-2]) / abs(lbs[-2]))
-            # print('Relative Elbo: {:1.4e}'.format(rel_elbo))
-            if abs(rel_elbo) < par['TOL_ELBO']:
-                print('\nFinished (ELBO tolerance {:1.4e} achieved).'.format(par['TOL_ELBO']))
-                return mom, lbs
-        else:
-            rel_elbo = 0.
+        stop, reason = check_stopping(t, par, elbos)
 
-
-        if 'Y' in data.keys():
-            print(
-                'Iter: {:3d} of {:3d} (kappa = {:.4f}) --- elbo: {:+.5e}, | ari(Y): {:+.3f} | avg. ari(Z): {:+.3f} | delta elbo: {:+.4e} |'.format(
-                    t + 1, T, par['kappa'], elbos['all'][-1], ari_Y, mari_Z, rel_elbo))
-        else:
-            print(
-                'Iter: {:3d} of {:3d} (kappa = {:.4f}) --- elbo: {:+.5e}'.format(
-                    t + 1, T, par['kappa'], elbos['all'][-1]))
+        if stop:
+            print(reason)
+            return mom, elbos
 
         # ####################### CAVI IMPLEMENTATION ########################
 
-        if alg == 'cavi':
+        if par['ALG'] == 'cavi':
 
-            ALPHA, BETA = msbm.update_Pi(mom, data, prior, par)
+            ALPHA, BETA = msbm.update_Pi(data, prior, hyper, mom, par)
             mom['ALPHA'] = ALPHA
             mom['BETA'] = BETA
 
-            LOG_TAU = msbm.update_Z(mom, data, prior, par)
+            LOG_TAU = msbm.update_Z(data, prior, hyper, mom, par)
             mom['LOG_TAU'] = LOG_TAU
             mom['TAU'] = msbm.par_from_mom_TAU(mom, par)
 
-            NU = msbm.update_gamma(mom, data, prior, par)
+            NU = msbm.update_gamma(data, prior, hyper, mom, par)
             mom['NU'] = NU
 
-            LOG_MU = msbm.update_Y(mom, data, prior, par)
+            LOG_MU = msbm.update_Y(data, prior, hyper, mom, par)
             mom['LOG_MU'] = LOG_MU
             mom['MU'] = msbm.par_from_mom_MU(mom, par)
 
-            ZETA = msbm.update_rho(mom, data, prior, par)
+            ZETA = msbm.update_rho(data, prior, hyper, mom, par)
             mom['ZETA'] = ZETA
 
         # ##################### NATGRAD IMPLEMENTATION #######################
 
-        if alg == 'natgrad':
-            #Step Lengths
-            s_t1 = 0.5
-            s_t2 = 0.5
+        if par['ALG'] == 'natgrad':
+
             mom_new = dict()
 
-            ALPHA, BETA = msbm.update_Pi(mom, data, prior, par)
-            mom_new['ALPHA'] = (1.0 - s_t2) * mom['ALPHA'] + s_t2 * ALPHA
-            mom_new['BETA'] = (1.0 - s_t2) * mom['BETA'] + s_t2 * BETA
+            ALPHA, BETA = msbm.update_Pi(data, prior, hyper, mom, par)
+            mom_new['ALPHA'] = (1.0 - par['nat_step']) * mom['ALPHA'] + par['nat_step'] * ALPHA
+            mom_new['BETA'] = (1.0 - par['nat_step']) * mom['BETA'] + par['nat_step'] * BETA
 
-            LOG_TAU = msbm.update_Z(mom, data, prior, par)
-            mom_new['LOG_TAU'] = (1.0 - s_t2) * mom['LOG_TAU'] + s_t2 * LOG_TAU
+            LOG_TAU = msbm.update_Z(data, prior, hyper, mom, par)
+            mom_new['LOG_TAU'] = (1.0 - par['nat_step']) * mom['LOG_TAU'] + par['nat_step'] * LOG_TAU
             mom_new['TAU'] = msbm.par_from_mom_TAU(mom_new, par)
 
-            NU = msbm.update_gamma(mom, data, prior, par)
-            mom_new['NU'] = (1.0 - s_t1) * mom['NU'] + s_t1 * NU
+            NU = msbm.update_gamma(data, prior, hyper, mom, par)
+            mom_new['NU'] = (1.0 - par['nat_step']) * mom['NU'] + par['nat_step'] * NU
 
-            LOG_MU = msbm.update_Y(mom, data, prior, par)
-            mom_new['LOG_MU'] = (1.0 - s_t1) * mom['LOG_MU'] + s_t1 * LOG_MU
+            LOG_MU = msbm.update_Y(data, prior, hyper, mom, par)
+            mom_new['LOG_MU'] = (1.0 - par['nat_step']) * mom['LOG_MU'] + par['nat_step'] * LOG_MU
             mom_new['MU'] = msbm.par_from_mom_MU(mom_new, par)
 
-            ZETA = msbm.update_rho(mom, data, prior, par)
-            mom_new['ZETA'] = (1.0 - s_t1) * mom['ZETA'] + s_t1 * ZETA
+            ZETA = msbm.update_rho(data, prior, hyper, mom, par)
+            mom_new['ZETA'] = (1.0 - par['nat_step']) * mom['ZETA'] + par['nat_step'] * ZETA
 
             mom = mom_new
 
-
-
-    print('\nFinished (maximum number of iterations).')
-
-    return mom, lbs
+    return mom, elbos

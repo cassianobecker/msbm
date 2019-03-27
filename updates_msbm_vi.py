@@ -8,7 +8,7 @@ import pdb
 # ################ UPDATE FUNCTIONS #########################
 
 
-def update_Pi(mom, data, prior, par):
+def update_Pi(data, prior, hyper, mom, par):
 
     str_sum = 'km, kij, kmiq, kmjr -> mqr'
 
@@ -23,9 +23,9 @@ def update_Pi(mom, data, prior, par):
     return NEW_ALPHA, NEW_BETA
 
 
-def update_Z(mom, data, prior, par):
-    Q = mom['ALPHA'].shape[1]
-    NU_diff = sp.psi(mom['NU']) - sp.psi(np.einsum('ij,k->ik', mom['NU'], np.ones(Q)))
+def update_Z(data, prior, hyper, mom, par):
+
+    NU_diff = sp.psi(mom['NU']) - sp.psi(np.einsum('ij,k->ik', mom['NU'], np.ones(hyper['Q'])))
 
     S1 = np.einsum('km,mq,i->kmiq', mom['MU'], NU_diff, np.ones(data['N']))
 
@@ -53,8 +53,8 @@ def par_from_mom_TAU(mom, par):
     return NEW_TAU
 
 
-def update_Y(mom, data, prior, par):
-    Q = mom['ALPHA'].shape[1]
+def update_Y(data, prior, hyper, mom, par):
+
     ZETA_diff = sp.psi(mom['ZETA']) - sp.psi(sum(mom['ZETA']))
 
     S1 = np.einsum('m,k->km', ZETA_diff, np.ones(data['K']))
@@ -67,7 +67,7 @@ def update_Y(mom, data, prior, par):
 
     S2 = np.einsum('kmiq,kmjr,mqrijk->km', mom['TAU'], mom['TAU'], P1 + P2)
 
-    NUdiff = sp.psi(mom['NU']) - sp.psi(np.einsum('ij,k->ik', mom['NU'], np.ones(Q)))
+    NUdiff = sp.psi(mom['NU']) - sp.psi(np.einsum('ij,k->ik', mom['NU'], np.ones(hyper['Q'])))
 
     S3 = np.einsum('kmiq,mq->km', mom['TAU'], NUdiff)
 
@@ -85,14 +85,14 @@ def par_from_mom_MU(mom, par):
     return NEW_MU
 
 
-def update_gamma(mom, data, prior, par):
+def update_gamma(data, prior, hyper, mom, par):
 
     NEW_NU = par['kappa']*(prior['NU_0'] + np.einsum('km,kmiq->mq', mom['MU'], mom['TAU']) - 1.0) + 1.0
 
     return NEW_NU
 
 
-def update_rho(mom, data, prior, par):
+def update_rho(data, prior, hyper, mom, par):
 
     NEW_ZETA = par['kappa']*(prior['ZETA_0'] + np.einsum('km->m', mom['MU']) - 1.0) + 1.0
 
@@ -101,7 +101,7 @@ def update_rho(mom, data, prior, par):
 
 # ################# COMPUTING THE ELBO #################
 
-def elbo_x(mom, data, prior, par):
+def elbo_x(data, prior, hyper, mom, par):
 
     # We use one line from update_z
     ALPHA_diff = sp.psi(mom['ALPHA']) - sp.psi(mom['ALPHA'] + mom['BETA'])
@@ -117,11 +117,11 @@ def elbo_x(mom, data, prior, par):
     return lb_x
 
 
-def elbo_gamma(mom, data, prior, par):
+def elbo_gamma(data, prior, hyper, mom, par):
 
     # We use NUdiff from update_z
-    Q = mom['ALPHA'].shape[1]
-    NU_diff = sp.psi(mom['NU']) - sp.psi(np.einsum('ij,k->ik', mom['NU'], np.ones(Q)))
+
+    NU_diff = sp.psi(mom['NU']) - sp.psi(np.einsum('ij,k->ik', mom['NU'], np.ones(hyper['Q'])))
     lb_gamma = np.einsum('mq->', (prior['NU_0'] - mom['NU'])*NU_diff)
 
     # Add the \Gamma terms (Not in the updates)
@@ -135,7 +135,7 @@ def elbo_gamma(mom, data, prior, par):
     return lb_gamma
 
 
-def elbo_rho(mom, data, prior, par):
+def elbo_rho(data, prior, hyper, mom, par):
 
     # We use ZETA_diff from update_y
     ZETA_diff = sp.psi(mom['ZETA']) - sp.psi(sum(mom['ZETA']))
@@ -152,7 +152,7 @@ def elbo_rho(mom, data, prior, par):
     return lb_rho
 
 
-def elbo_pi(mom, data, prior, par):
+def elbo_pi(data, prior, hyper, mom, par):
 
     # We use one line from update_Z
     lb_alpha = np.einsum('mqr->', (prior['ALPHA_0'] - mom['ALPHA'])
@@ -177,7 +177,7 @@ def elbo_pi(mom, data, prior, par):
     return lb_pi
 
 
-def elbo_y(mom, data, prior, par):
+def elbo_y(data, prior, hyper, mom, par):
 
     # We use ZETA_diff from update_y
     ZETA_diff = sp.psi(mom['ZETA']) - sp.psi(sum(mom['ZETA']))
@@ -187,10 +187,10 @@ def elbo_y(mom, data, prior, par):
     return lb_y
 
 
-def elbo_z(mom, data, prior, par):
-    Q = mom['ALPHA'].shape[1]
+def elbo_z(data, prior, hyper, mom, par):
+
     # We use NU_diff from update_z
-    NU_diff = sp.psi(mom['NU']) - sp.psi(np.einsum('ij,k->ik', mom['NU'], np.ones(Q)))
+    NU_diff = sp.psi(mom['NU']) - sp.psi(np.einsum('ij,k->ik', mom['NU'], np.ones(hyper['Q'])))
 
     P1 = np.einsum('km,kmiq,mq->', mom['MU'], mom['TAU'], NU_diff)
 
@@ -201,20 +201,20 @@ def elbo_z(mom, data, prior, par):
     return lb_z
 
 
-def compute_elbo(mom, data, prior, par):
+def compute_elbo(data, prior, hyper, mom, par):
 
     elbo = dict()
-    elbo['x'] = elbo_x(mom, data, prior, par)
-    elbo['rho'] = elbo_rho(mom, data, prior, par)
-    elbo['pi'] = elbo_pi(mom, data, prior, par)
-    elbo['gamma'] = elbo_gamma(mom, data, prior, par)
-    elbo['y'] = elbo_y(mom, data, prior, par)
-    elbo['z'] = elbo_z(mom, data, prior, par)
+    elbo['x'] = elbo_x(data, prior, hyper, mom, par)
+    elbo['rho'] = elbo_rho(data, prior, hyper, mom, par)
+    elbo['pi'] = elbo_pi(data, prior, hyper, mom, par)
+    elbo['gamma'] = elbo_gamma(data, prior, hyper, mom, par)
+    elbo['y'] = elbo_y(data, prior, hyper, mom, par)
+    elbo['z'] = elbo_z(data, prior, hyper, mom, par)
 
     return sum(elbo.values())
 
 
-def compute_elbos(mom, data, prior, par, elbos = None):
+def compute_elbos(data, prior, hyper, mom, par, elbos = None):
     if elbos is None:
         elbos = dict()
     if len(list(elbos.keys())) == 0:
@@ -226,12 +226,12 @@ def compute_elbos(mom, data, prior, par, elbos = None):
         elbos['z'] = list()
         elbos['all'] = list()
 
-    elbos['x'].append(elbo_x(mom, data, prior, par))
-    elbos['rho'].append(elbo_rho(mom, data, prior, par))
-    elbos['pi'].append(elbo_pi(mom, data, prior, par))
-    elbos['gamma'].append(elbo_gamma(mom, data, prior, par))
-    elbos['y'].append(elbo_y(mom, data, prior, par))
-    elbos['z'].append(elbo_z(mom, data, prior, par))
+    elbos['x'].append(elbo_x(data, prior, hyper, mom, par))
+    elbos['rho'].append(elbo_rho(data, prior, hyper, mom, par))
+    elbos['pi'].append(elbo_pi(data, prior, hyper, mom, par))
+    elbos['gamma'].append(elbo_gamma(data, prior, hyper, mom, par))
+    elbos['y'].append(elbo_y(data, prior, hyper, mom, par))
+    elbos['z'].append(elbo_z(data, prior, hyper, mom, par))
     
     elbo = sum([elbos[key][-1] for key in elbos.keys() if key not in ['all']])
     elbos['all'].append(elbo)

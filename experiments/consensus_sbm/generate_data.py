@@ -15,7 +15,7 @@ import generate_msbm as gn
 def main():
     for detec in np.arange(2.0, 2.05, 0.05):
         print("generating networks with SNR:{}".format(detec))
-        data, par = gn.create_msbm(
+        data = gn.create_msbm(
             Q=3, N=120, M=1, K=100,
             dii=46.0, dij=6.0,
             SNR=detec,
