@@ -410,17 +410,16 @@ def create_msbm(
 		Z[k, :] = sample_Z(GAMMA[m, :], N)
 		X[k, :] = sample_X_und(PI[m, :], Z[k, :])
 
-	par = dict()
-	#(TO DO)CHANGE TO DATA ALSO AND CHECK ALL FUNCTIONS THAT RELY ON THIS:
-	par['Q'] = Q
-	par['N'] = N
-	par['M'] = M
-	par['K'] = K
-	par['dii'] = dii
-	par['dij'] = dij
-	par['SNR'] = SNR
-
 	data = dict()
+
+	data['Q'] = Q
+	data['N'] = N
+	data['M'] = M
+	data['K'] = K
+	data['dii'] = dii
+	data['dij'] = dij
+	data['SNR'] = SNR
+
 	data['RHO'] = RHO
 	data['Y'] = Y
 	data['GAMMA'] = GAMMA
@@ -436,7 +435,7 @@ def create_msbm(
 	if verbose == True:
 		print('save succesful')
 
-	return data, par
+	return data
 
 
 def find_row(x):
@@ -454,7 +453,7 @@ def main():
 		path_data = sys.argv[1]
 		fname = sys.argv[2]
 
-	data, par = create_msbm(
+	data = create_msbm(
 	Q = 4, N = 200, M = 3, K = 50,
 	dii = 36.00, dij = 2.0,
 	SNR = 1.05,
@@ -462,7 +461,6 @@ def main():
 	fname = fname,
 	verbose = True)
 
-	print(data['PI'])
 if __name__ == '__main__':
 
 	main()
