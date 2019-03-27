@@ -156,8 +156,8 @@ def main():
         fname = sys.argv[2]
 
     data=  create_multistrata(
-        Q= 4, N = 128, K = 100, M=2,
-        pii = [0.1836,0.1], c = 16,
+        Q= 4, N = 128, K = 30, M=3,
+        pii = [0.6,0.4,0.125], c = 20,
         path_data = path_data,
         fname = fname,
         verbose = True):
