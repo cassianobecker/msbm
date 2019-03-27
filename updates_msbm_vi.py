@@ -24,14 +24,14 @@ def update_Pi(mom, data, prior, par):
 
 
 def update_Z(mom, data, prior, par):
+    Q = mom['ALPHA'].shape[1]
+    NU_diff = sp.psi(mom['NU']) - sp.psi(np.einsum('ij,k->ik', mom['NU'], np.ones(Q)))
 
-    NU_diff = sp.psi(mom['NU']) - sp.psi(np.einsum('ij,k->ik', mom['NU'], np.ones(par['Q'])))
-
-    S1 = np.einsum('km,mq,i->kmiq', mom['MU'], NU_diff, np.ones(par['N']))
+    S1 = np.einsum('km,mq,i->kmiq', mom['MU'], NU_diff, np.ones(data['N']))
 
     P2 = np.einsum('mqr,i,j,k->mqrijk',
                    sp.psi(mom['BETA']) - sp.psi(mom['ALPHA'] + mom['BETA']),
-                   np.ones(par['N']), np.ones(par['N']), np.ones(par['K']))
+                   np.ones(data['N']), np.ones(data['N']), np.ones(data['K']))
 
     P1 = np.einsum('kij,mqr->mqrijk',
                    data['X'],
@@ -54,20 +54,20 @@ def par_from_mom_TAU(mom, par):
 
 
 def update_Y(mom, data, prior, par):
-
+    Q = mom['ALPHA'].shape[1]
     ZETA_diff = sp.psi(mom['ZETA']) - sp.psi(sum(mom['ZETA']))
 
-    S1 = np.einsum('m,k->km', ZETA_diff, np.ones(par['K']))
+    S1 = np.einsum('m,k->km', ZETA_diff, np.ones(data['K']))
 
     P1 = np.einsum('kij,mqr->mqrijk', data['X'], sp.psi(mom['ALPHA']) - sp.psi(mom['BETA']))
 
     P2 = np.einsum('mqr,i,j,k->mqrijk',
                    sp.psi(mom['BETA']) - sp.psi(mom['ALPHA'] + mom['BETA']),
-                   np.ones(par['N']), np.ones(par['N']), np.ones(par['K']))
+                   np.ones(data['N']), np.ones(data['N']), np.ones(data['K']))
 
     S2 = np.einsum('kmiq,kmjr,mqrijk->km', mom['TAU'], mom['TAU'], P1 + P2)
 
-    NUdiff = sp.psi(mom['NU']) - sp.psi(np.einsum('ij,k->ik', mom['NU'], np.ones(par['Q'])))
+    NUdiff = sp.psi(mom['NU']) - sp.psi(np.einsum('ij,k->ik', mom['NU'], np.ones(Q)))
 
     S3 = np.einsum('kmiq,mq->km', mom['TAU'], NUdiff)
 
@@ -120,7 +120,8 @@ def elbo_x(mom, data, prior, par):
 def elbo_gamma(mom, data, prior, par):
 
     # We use NUdiff from update_z
-    NU_diff = sp.psi(mom['NU']) - sp.psi(np.einsum('ij,k->ik', mom['NU'], np.ones(par['Q'])))
+    Q = mom['ALPHA'].shape[1]
+    NU_diff = sp.psi(mom['NU']) - sp.psi(np.einsum('ij,k->ik', mom['NU'], np.ones(Q)))
     lb_gamma = np.einsum('mq->', (prior['NU_0'] - mom['NU'])*NU_diff)
 
     # Add the \Gamma terms (Not in the updates)
@@ -187,9 +188,9 @@ def elbo_y(mom, data, prior, par):
 
 
 def elbo_z(mom, data, prior, par):
-
+    Q = mom['ALPHA'].shape[1]
     # We use NU_diff from update_z
-    NU_diff = sp.psi(mom['NU']) - sp.psi(np.einsum('ij,k->ik', mom['NU'], np.ones(par['Q'])))
+    NU_diff = sp.psi(mom['NU']) - sp.psi(np.einsum('ij,k->ik', mom['NU'], np.ones(Q)))
 
     P1 = np.einsum('km,kmiq,mq->', mom['MU'], mom['TAU'], NU_diff)
 

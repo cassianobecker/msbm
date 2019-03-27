@@ -10,7 +10,7 @@ def load_data(data_file_url):
     loaded = pickle.load(open(data_file_url, 'rb'), encoding='latin1')
     print('loaded.')
     #(TO DO) this should only return data
-    return loaded['data'], loaded['par']
+    return loaded['data']
 
 def load_results(result_file_url):
 

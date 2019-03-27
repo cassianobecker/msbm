@@ -1,5 +1,6 @@
 import updates_msbm_vi as msbm
 import plot
+import pdb
 from scipy import sparse
 from util import *
 import init_msbm_vi as im
@@ -12,19 +13,19 @@ def sigmoid(x):
     return 1 / (1 + np.exp(-x))
 
 
-def infer(mom, data, prior, par, alg='natgrad'):
+def infer(mom, data, prior, par):
     print('##############################################################')
     print('                RUNNING ' + str.upper(alg) + ' FOR MSBM        ')
     print('                K = {:d}, M = {:d}, N = {:d}, Q = {:}'.
-          format(par['K'], par['M'], par['N'], par['Q']))
+          format(data['K'], mom['NU'].shape[0], data['N'], mom['ALPHA'].shape[1]))
     print('##############################################################')
 
     T = par['MAX_ITER']
-    TS = [1e10]
     lbs = np.array(0)
-    kappas = sigmoid(np.linspace(-3, 10, T))
+    if 'KAPPAS' not in par.keys():
+        kappas = sigmoid(np.linspace(-3, 10, T))
     elbos = dict()
-
+    alg = par['ALG']
     #TO DO: Implement stopping criterion 
     for t in range(T):
 
@@ -80,15 +81,6 @@ def infer(mom, data, prior, par, alg='natgrad'):
 
             ZETA = msbm.update_rho(mom, data, prior, par)
             mom['ZETA'] = ZETA
-
-            if t + 1 in TS:
-                print('RESETTING MOMENTS for ALPHA, BETA, NU, TAU')
-                mode = 'random'
-                mom['ALPHA'] = im.init_ALPHA(par, mode)
-                mom['BETA'] = im.init_BETA(par, mode)
-                mom['NU'] = im.init_NU(par, mode)
-                mom['TAU'] = im.init_TAU(par, mode)
-                mom['LOG_TAU'] = np.log(mom['TAU'])
 
         # ##################### NATGRAD IMPLEMENTATION #######################
 
