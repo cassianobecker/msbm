@@ -1,15 +1,8 @@
 import numpy as np
 import numpy.random as npr
 
-
-def init_moments(hyper):
-
-    prior = dict()
-    prior['ALPHA_0'] = 0.5
-    prior['BETA_0'] = 0.5
-    prior['NU_0'] = 0.5
-    prior['ZETA_0'] = 0.5
-
+#TO DO (fix all of this so that it takes data)
+def init_moments(data, hyper):
     mom = dict()
 
     mode = 'random'
@@ -23,7 +16,7 @@ def init_moments(hyper):
     mom['TAU'] = init_TAU(hyper, mode)
     mom['LOG_TAU'] = np.log(mom['TAU'])
 
-    return mom, prior
+    return mom
 
 
 def init_NU(hyper, mode='random'):
@@ -90,27 +83,3 @@ def init_TAU(hyper, mode='random'):
             TAU[k, m, :] = TAU[k, m, :] / np.expand_dims(np.sum(TAU[k, m, :], axis=1), axis=1)
 
     return TAU
-
-def init_moments_truth(hyper, data):
-
-    prior = dict()
-    prior['ALPHA_0'] = 0.5
-    prior['BETA_0'] = 0.5
-    prior['NU_0'] = 0.5
-    prior['ZETA_0'] = 0.5
-
-    mom = dict()
-    mom['ALPHA'] = npr.rand(hyper['M'], hyper['Q'], hyper['Q'])
-    mom['BETA'] = npr.rand(hyper['M'], hyper['Q'], hyper['Q'])
-    mom['NU'] = npr.rand(hyper['M'], hyper['Q'])
-    mom['ZETA'] = npr.rand(hyper['M'])
-
-    eps = 1.e-6
-
-    mom['MU'] = data['Y']
-    mom['LOG_MU'] = np.log(mom['MU'] + eps)
-
-    mom['TAU'] = np.einsum('ijk,l->iljk', data['Z'], np.ones(hyper['M']))
-    mom['LOG_TAU'] = np.log(mom['TAU'] + eps)
-
-    return mom, prior

@@ -27,6 +27,8 @@ def main():
         # set max iterations
         par['MAX_ITER'] = 50
         par['TOL_ELBO'] = 1.e-14
+        par['M'] = data['M'] 
+        par['Q'] = data['Q']
         # (TO DO) infer should need only algorithmic pars
         results_mom, elbo_seq = varinf.infer(mom, data, prior, par, 'cavi')
         print('Saving file to {:s} ... '.format('models/model_' + data_file))

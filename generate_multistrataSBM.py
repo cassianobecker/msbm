@@ -14,7 +14,7 @@ import scipy as sp
 from scipy.stats import beta
 from scipy import optimize
 from scipy import sparse
-from generate_msbm.py import *
+import generate_msbm as gen
 
 def sample_Y_balanced(M, K):
     """
@@ -29,13 +29,13 @@ def sample_Y_balanced(M, K):
     """
     K_M = np.floor(K/M)
     #we sample the excedent at random
-    Y = npr.multinomial(1,np.ones(M)/M,M - K_M*M)
+    Y = npr.multinomial(1,np.ones(M)/M, int(K - K_M*M))
     for m in range(M):
         probs = np.zeros(M)
         probs[m] += 1
-        Y = np.concatenate((Y,npr.multinomial(1,probs, K_M)))
-
-    return npr.shuffle(Y.astype(float))
+        Y = np.concatenate((Y,npr.multinomial(1,probs, int(K_M))))
+    npr.shuffle(Y)
+    return Y.astype(float)
 
 def sample_Z_balanced(Q, N):
     """
@@ -50,13 +50,13 @@ def sample_Z_balanced(Q, N):
     """
     N_Q = np.floor(N/Q)
     #we sample the excedent at random
-    Z = npr.multinomial(1,np.ones(Q)/Q,Q - N_Q*Q)
+    Z = npr.multinomial(1,np.ones(Q)/Q,int(N - N_Q*Q))
     for q in range(Q):
         probs = np.zeros(Q)
         probs[q] += 1
-        Z = np.concatenate((Z,npr.multinomial(1,probs,N_Q)))
-
-    return npr.shuffle(Z.astype(float))
+        Z = np.concatenate((Z,npr.multinomial(1, probs, int(N_Q))))
+    npr.shuffle(Z)
+    return Z.astype(float)
 
 def create_multistrata(
     Q= 4, N = 128, K = 100, M=2,
@@ -106,18 +106,21 @@ def create_multistrata(
         if verbose == True:
             print("GENERATING PROTOTYPE NUMBER: {:d}".format(m))
         pij = ((Q*c)/N - pii[m])/(Q-1)
-        PI[m, :] = PI[m, :]*pij + np.diag( np.repeat(pii - pij,Q))
+        PI[m, :] = PI[m, :]*pij + np.diag( np.repeat(pii[m] - pij,Q))
         pi_constant = PI[m, :] * (N/np.log(N))
-        SNR[m], _, _ =  getSNR(gamma,pi_constant)
+        gamma = GAMMA[m, :].reshape((1,Q))
+        SNR[m], _, _ =  gen.getSNR(gamma,pi_constant)
         if verbose == True:
-            print("Prototype {} has a C-H Divergence of: {:03f}".format(m,SNR[m]))
+            print("Prototype {} has PI matrix:".format(m))
+            print(PI[m, :])
+            print("with C-H Divergence of: {:03f}".format(SNR[m]))
 
     Z = np.zeros((K, N, Q))
     X = np.zeros((K, N, N))
     for k in range(K):
-        m = find_row(Y[k, :])
+        m = gen.find_row(Y[k, :])
         Z[k, :] = sample_Z_balanced(Q, N)
-        X[k, :] = sample_X_und(PI[m, :], Z[k, :])
+        X[k, :] = gen.sample_X_und(PI[m, :], Z[k, :])
 
     data = dict()
 
@@ -150,7 +153,7 @@ def create_multistrata(
 def main():
     if len(sys.argv) < 2:
          path_data = 'data'
-         fname = 'demo_mssbm'
+         fname = 'demo_smlsbm'
     else:
         path_data = sys.argv[1]
         fname = sys.argv[2]
@@ -160,7 +163,7 @@ def main():
         pii = [0.6,0.4,0.125], c = 20,
         path_data = path_data,
         fname = fname,
-        verbose = True):
+        verbose = True)
     sys.exit()
 
 if __name__ == '__main__':
