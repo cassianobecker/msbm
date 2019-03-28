@@ -3,8 +3,9 @@
 # average rand_index and average entropy of the z variables, which are indicators of how well 
 # the algorithm is learning the true model.
 
-import os
+import sys, os
 import pickle
+sys.path.insert(0, '../..')
 import util as ut
 import init_msbm_vi as im
 import varinf
@@ -35,8 +36,8 @@ def main():
         mom = im.init_moments(data, hyper)
 
         par = dict()
-        par['MAX_ITER'] = 50
-        par['TOL_ELBO'] = 1.e-14
+        par['MAX_ITER'] = 1000
+        par['TOL_ELBO'] = 1.e-16
         par['ALG'] = 'cavi'
 
         results_mom, elbo_seq = varinf.infer(data, prior, hyper, mom, par)
