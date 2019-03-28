@@ -42,7 +42,7 @@ def adj_rand_Z(mom, data):
 
     return aris
 
-#TO DO: Mean entropy of Z variables...
+#Entropy of "correct" set of Z
 def get_entropy_Z(mom):
 
     ms = np.argmax(mom['MU'], axis=1)

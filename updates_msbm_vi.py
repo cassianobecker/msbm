@@ -5,6 +5,7 @@ inference as well as computation of the ELBO
 import numpy as np
 import scipy.special as sp
 import pdb
+from scipy.stats import beta
 # ################ UPDATE FUNCTIONS #########################
 
 
@@ -22,6 +23,11 @@ def update_Pi(data, prior, hyper, mom, par):
 
     return NEW_ALPHA, NEW_BETA
 
+def Pi_from_mom(mom):
+
+    Pi_estimate = beta.stats(mom['ALPHA'],mom['BETA'],moments='m')
+    
+    return Pi_estimate
 
 def update_Z(data, prior, hyper, mom, par):
 
@@ -44,7 +50,7 @@ def update_Z(data, prior, hyper, mom, par):
     return NEW_LOG_TAU
 
 
-def par_from_mom_TAU(mom, par):
+def TAU_from_LOG_TAU(mom, par):
 
     NEW_TAU = np.exp(mom['LOG_TAU'] - np.expand_dims(np.max(mom['LOG_TAU'], axis=3), axis=3))
 

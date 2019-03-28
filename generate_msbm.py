@@ -176,16 +176,13 @@ def get_gamma_pi(
     alpha_ij = ((mij ** 2) * (1 - mij) - mij * vij) / vij
     beta_ij = (1 / vij) * (mij * (1 - mij) - vij) * (1 - mij)
 
-    pi = np.zeros((Q, Q))
-    for i in range(Q):
-        for j in range(Q):
-            if i == j:
-                pi[i, j] = npr.beta(alpha_ii, beta_ii) / 2
-
-            if i < j:
-                pi[i, j] = npr.beta(alpha_ij, beta_ij)
-
-    pi = pi + np.transpose(pi)
+    ALPHA_0 = np.ones((Q, Q))*alpha_ij + np.diag( np.repeat(alpha_ii - alpha_ij,Q))
+    BETA_0 = np.ones((Q,Q))*beta_ij + np.diag( np.repeat(beta_ii - beta_ij,Q))
+    #Populate the matrix pi in one-shot
+    pi = npr.beta(ALPHA_0,BETA_0)
+    #Symmetrize
+    pi = np.tril(pi) + np.transpose(np.tril(pi,-1))
+    
     if sampling == 'unconstrained':
         return gamma, pi
 
@@ -219,16 +216,11 @@ def get_gamma_pi(
                 time.sleep(1.5)
                 print('Restarting Simulated Annealing')
             gamma = npr.dirichlet(np.repeat(alpha, Q), 1)
-            pi = np.zeros((Q, Q))
-            for i in range(Q):
-                for j in range(Q):
-                    if i == j:
-                        pi[i, j] = npr.beta(alpha_ii, beta_ii) / 2
+            #Populate the matrix pi in one-shot
+            pi = npr.beta(ALPHA_0,BETA_0)
+            #Symmetrize
+            pi = np.tril(pi) + np.transpose(np.tril(pi,-1))
 
-                    if i < j:
-                        pi[i, j] = npr.beta(alpha_ij, beta_ij)
-
-            pi = pi + np.transpose(pi)
             T_init = 1.01
             avgDeg = getavgDeg(gamma, pi * (n / np.log(n)), n)
             pi = pi * targetDeg / avgDeg

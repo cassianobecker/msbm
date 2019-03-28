@@ -1,3 +1,4 @@
+import pdb
 import updates_msbm_vi as msbm
 from util import *
 
@@ -57,16 +58,16 @@ def print_header(data, hyper, par):
 
 
 def print_status(t, data, mom, par, elbos):
-
     ari_Y = adj_rand(mom['MU'], data['Y'])
     mari_Z = np.mean(adj_rand_Z(mom, data))
+    mentro_Z = np.mean(get_entropy_Z(mom))
     relative_elbo = get_relative_elbo(elbos)
 
     if 'Y' in data.keys():
         print(
             'Iter: {:3d} of {:3d} (kappa = {:.4f}) --- elbo: {:+.5e}, | ari(Y): {:+.3f} |'
-            'avg. ari(Z): {:+.3f} | delta elbo: {:+.4e} |'.format(
-                t + 1, par['MAX_ITER'], par['kappa'], elbos['all'][-1], ari_Y, mari_Z, relative_elbo))
+            'avg. ari(Z): {:+.3f} | delta elbo: {:+.4e} | avg. entro(Z): {:+.5f}'.format(
+                t + 1, par['MAX_ITER'], par['kappa'], elbos['all'][-1], ari_Y, mari_Z, relative_elbo, mentro_Z))
     else:
         print(
             'Iter: {:3d} of {:3d} (kappa = {:.4f}) --- elbo: {:+.5e}'.format(
@@ -103,9 +104,10 @@ def infer(data, prior, hyper, mom, par):
             mom['ALPHA'] = ALPHA
             mom['BETA'] = BETA
 
+            pdb.set_trace()
             LOG_TAU = msbm.update_Z(data, prior, hyper, mom, par)
             mom['LOG_TAU'] = LOG_TAU
-            mom['TAU'] = msbm.par_from_mom_TAU(mom, par)
+            mom['TAU'] = msbm.TAU_from_LOG_TAU(mom, par)
 
             NU = msbm.update_gamma(data, prior, hyper, mom, par)
             mom['NU'] = NU
@@ -129,7 +131,7 @@ def infer(data, prior, hyper, mom, par):
 
             LOG_TAU = msbm.update_Z(data, prior, hyper, mom, par)
             mom_new['LOG_TAU'] = (1.0 - par['nat_step']) * mom['LOG_TAU'] + par['nat_step'] * LOG_TAU
-            mom_new['TAU'] = msbm.par_from_mom_TAU(mom_new, par)
+            mom_new['TAU'] = msbm.TAU_from_LOG_TAU(mom_new, par)
 
             NU = msbm.update_gamma(data, prior, hyper, mom, par)
             mom_new['NU'] = (1.0 - par['nat_step']) * mom['NU'] + par['nat_step'] * NU
