@@ -1,5 +1,7 @@
 import sklearn.metrics as skm
 import pickle
+import random 
+import pdb
 import numpy as np
 from scipy.special import entr
 
@@ -49,3 +51,27 @@ def get_entropy_Z(mom):
     entro = [entr(mom['TAU'][k, m, :]).sum(axis=1) for k, m in enumerate(ms)]
 
     return entro
+
+def peek_mom_TAU(mom, seed = None):
+    """
+    A peek at the TAU of 5 nodes selected at random from one 
+    of the networks. The TAU set chosen is that of the likeliest
+    prototype. 
+    Parameters
+    ----------
+    mom : array
+        array with all the moments
+    seed: int
+        a random seed to always obtain the same 5 nodes
+    """
+    print("Peek from Tau moments:")
+    random.seed(seed)
+    #select a random network 
+    k = random.randint(0, mom['MU'].shape[0])
+    #assign prototype
+    m = np.argmax(mom['MU'][k,:])
+    #select the nodes at random
+    node_ids = [random.randint(0,mom['TAU'].shape[2]) for i in range(5)]
+
+    return mom['TAU'][k,m,node_ids,:]
+

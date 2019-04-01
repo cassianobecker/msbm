@@ -90,6 +90,10 @@ def infer(data, prior, hyper, mom, par):
 
         print_status(t, data, mom, par, elbos)
 
+        print(peek_mom_TAU(mom, seed = 123))
+        print(msbm.Pi_from_mom(mom))
+        pdb.set_trace()
+
         stop, reason = check_stopping(t, par, elbos)
 
         if stop:
@@ -104,7 +108,6 @@ def infer(data, prior, hyper, mom, par):
             mom['ALPHA'] = ALPHA
             mom['BETA'] = BETA
 
-            pdb.set_trace()
             LOG_TAU = msbm.update_Z(data, prior, hyper, mom, par)
             mom['LOG_TAU'] = LOG_TAU
             mom['TAU'] = msbm.TAU_from_LOG_TAU(mom, par)

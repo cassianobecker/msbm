@@ -1,6 +1,6 @@
 import numpy as np
 import numpy.random as npr
-
+import networkx as nx
 
 def init_moments(data, hyper):
 
@@ -78,6 +78,24 @@ def init_TAU(data, hyper, mode='random'):
         TAU = npr.rand(data['K'], hyper['M'], data['N'], hyper['Q'])
     if mode == 'uniform':
         TAU = np.ones((data['K'], hyper['M'], data['N'], hyper['Q']))
+    if mode == 'distance' or mode == 'distance_sparse':
+        #Initialize
+        TAU = np.ones((data['K'], hyper['M'], data['N'], hyper['Q']))
+        for k in range(data['K']):
+            G = nx.from_numpy_matrix(data['X'][k,:])
+            #Could we get rid of the M loop?
+            for m in range(hyper['M']):
+                #select Q seeds at random
+                seeds = npr.choice(data['N'], hyper['Q'], replace=False)
+                for q in range(hyper['Q']):
+                    seed = seed[q]
+                    dists = nx.shortest_path_length(G,source=seed)
+                    dists = np.fromiter(dists.values(), dtype=float)
+                    TAU[k,m,: , q] = np.exp2(-dists)
+                if mode == 'distance_sparse'
+                    TAU[k,m,: ,:] = (TAU[k,m,: ,:] == np.max(TAU[k,m,: ,:])) + 0
+    if mode == 'spectral':
+        print("SPECTRAL MODE HASN'T BEEN CODED")
 
     for k in range(data['K']):
         for m in range(hyper['M']):

@@ -339,6 +339,7 @@ def sample_X_und(pi, Z):
         vector of N multinomials (in 0-1 expanded notation)
          representing community memberships
     """
+    #(TO DO) Store as a sparse matrix
     N = Z.shape[0]
     X = np.zeros((N, N))
     for i in range(N):

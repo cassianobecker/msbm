@@ -25,6 +25,7 @@ def update_Pi(data, prior, hyper, mom, par):
 
 def Pi_from_mom(mom):
 
+    print("Current PI estimate:")
     Pi_estimate = beta.stats(mom['ALPHA'],mom['BETA'],moments='m')
     
     return Pi_estimate
