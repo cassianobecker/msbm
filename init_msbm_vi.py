@@ -1,4 +1,5 @@
 import numpy as np
+import pdb
 import numpy.random as npr
 import networkx as nx
 
@@ -14,6 +15,8 @@ def init_moments(data, hyper):
     mom['ZETA'] = init_ZETA(data, hyper, mode)
     mom['MU'] = init_MU(data, hyper, mode)
     mom['LOG_MU'] = np.log(mom['MU'])
+
+    mode = 'distance_sparse'
     mom['TAU'] = init_TAU(data, hyper, mode)
     mom['LOG_TAU'] = np.log(mom['TAU'])
 
@@ -88,12 +91,12 @@ def init_TAU(data, hyper, mode='random'):
                 #select Q seeds at random
                 seeds = npr.choice(data['N'], hyper['Q'], replace=False)
                 for q in range(hyper['Q']):
-                    seed = seed[q]
-                    dists = nx.shortest_path_length(G,source=seed)
-                    dists = np.fromiter(dists.values(), dtype=float)
-                    TAU[k,m,: , q] = np.exp2(-dists)
-                if mode == 'distance_sparse'
-                    TAU[k,m,: ,:] = (TAU[k,m,: ,:] == np.max(TAU[k,m,: ,:])) + 0
+                    dists = nx.shortest_path_length(G,source= seeds[q])
+                    dists = [dists[key] for key in sorted(dists.keys())]
+                    TAU[k,m,: , q] = np.exp2(-np.array(dists))
+                if mode == 'distance_sparse':
+                    for n in range(data['N']):
+                        TAU[k, m, n ,:] = (TAU[k, m, n ,:] == np.max(TAU[k, m, n ,:])) + 0
     if mode == 'spectral':
         print("SPECTRAL MODE HASN'T BEEN CODED")
 
