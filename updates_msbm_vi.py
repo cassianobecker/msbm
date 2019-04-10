@@ -26,9 +26,7 @@ def update_Pi(data, prior, hyper, mom, par):
 
 def Pi_from_mom(mom):
 
-    print("Current PI estimate:")
     Pi_estimate = beta.stats(mom['ALPHA'],mom['BETA'],moments='m')
-    
     return Pi_estimate
 
 def update_Z(data, prior, hyper, mom, par):
@@ -99,9 +97,8 @@ def update_gamma(data, prior, hyper, mom, par):
 
     return NEW_NU
 
-def Pi_from_mom(mom):
+def Gamma_from_mom(mom):
 
-    print("Current GAMMA estimate:")
     Gamma_estimate = [dirichlet.mean(mom['NU'][m,:]) for m in range(mom['NU'].shape[0]) ]
     return Gamma_estimate
 
