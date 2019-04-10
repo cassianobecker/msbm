@@ -6,6 +6,7 @@ import numpy as np
 import scipy.special as sp
 import pdb
 from scipy.stats import beta
+from scipy.stats import dirichlet
 # ################ UPDATE FUNCTIONS #########################
 
 
@@ -98,6 +99,11 @@ def update_gamma(data, prior, hyper, mom, par):
 
     return NEW_NU
 
+def Pi_from_mom(mom):
+
+    print("Current GAMMA estimate:")
+    Gamma_estimate = [dirichlet.mean(mom['NU'][m,:]) for m in range(mom['NU'].shape[0]) ]
+    return Gamma_estimate
 
 def update_rho(data, prior, hyper, mom, par):
 

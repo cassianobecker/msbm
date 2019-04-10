@@ -5,6 +5,7 @@
 
 import sys, os
 import pickle
+import pdb
 sys.path.insert(0, '../..')
 import util as ut
 import init_msbm_vi as im
@@ -20,7 +21,6 @@ def main():
         # load data
         file_url = os.path.join('data', data_file)
         data = ut.load_data(file_url)
-        
         prior = dict()
         prior['ALPHA_0'] = 0.5
         prior['BETA_0'] = 0.5

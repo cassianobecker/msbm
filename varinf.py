@@ -11,7 +11,7 @@ def get_default_parameters(par):
         return 1 / (1 + np.exp(-x))
 
     if 'kappas' not in par.keys():
-        par['kappas'] = sigmoid(np.linspace(-3, 10, par['MAX_ITER']))
+        par['kappas'] = sigmoid(np.linspace(0, par['MAX_ITER']/4, par['MAX_ITER']))
 
     if 'nat_step' not in par.keys():
         par['nat_step'] = 0.5
@@ -89,10 +89,6 @@ def infer(data, prior, hyper, mom, par):
         elbos = msbm.compute_elbos(data, prior, hyper, mom, par, elbos)
 
         print_status(t, data, mom, par, elbos)
-
-        print(peek_mom_TAU(mom, seed = 123))
-        print(msbm.Pi_from_mom(mom))
-        pdb.set_trace()
 
         stop, reason = check_stopping(t, par, elbos)
 

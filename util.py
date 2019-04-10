@@ -67,11 +67,11 @@ def peek_mom_TAU(mom, seed = None):
     print("Peek from Tau moments:")
     random.seed(seed)
     #select a random network 
-    k = random.randint(0, mom['MU'].shape[0])
+    k = random.randint(0, mom['MU'].shape[0]-1)
     #assign prototype
     m = np.argmax(mom['MU'][k,:])
     #select the nodes at random
-    node_ids = [random.randint(0,mom['TAU'].shape[2]) for i in range(5)]
+    node_ids = [random.randint(0,mom['TAU'].shape[2]-1) for i in range(5)]
 
     return mom['TAU'][k,m,node_ids,:]
 

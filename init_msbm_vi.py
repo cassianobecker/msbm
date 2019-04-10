@@ -97,8 +97,10 @@ def init_TAU(data, hyper, mode='random'):
                 if mode == 'distance_sparse':
                     for n in range(data['N']):
                         TAU[k, m, n ,:] = (TAU[k, m, n ,:] == np.max(TAU[k, m, n ,:])) + 0
-    if mode == 'spectral':
-        print("SPECTRAL MODE HASN'T BEEN CODED")
+    if mode == 'truth':
+        TAU = np.ones((data['K'], hyper['M'], data['N'], hyper['Q']))
+        for m in range(hyper['M']):
+            TAU[:, m, :, :] = data['Z']
 
     for k in range(data['K']):
         for m in range(hyper['M']):

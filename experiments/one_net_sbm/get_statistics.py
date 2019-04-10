@@ -9,36 +9,40 @@ import numpy as np
 sys.path.insert(0, '../..')
 import util as ut
 import varinf
+import updates_msbm_vi as upd
 
 
 def main():
-    file_list = sorted(os.listdir('data'))
+    data_file = os.listdir('data')[0]
     # Need to read in original data + trained moments and elbos
-    chd_list = []
-    ari_list = []
-    delta_elbo_list = []
-    entropy_list = []
-    for data_file in file_list:
-        print("Reading data + moments from model: {}".format(data_file))
-        # load data
-        data, par = ut.load_data('data/' + data_file)
-        model_url = os.path.join('models', 'model_' + data_file)
-        results_mom, elbo_seq = ut.load_results(model_url)
+    print("Reading data + moments from model: {}".format(data_file))
+    # load data
+    data = ut.load_data('data/' + data_file)
+    model_url = os.path.join('models', 'model_' + data_file)
+    results_mom, elbo_seq = ut.load_results(model_url)
 
-        chd_list.append(par['SNR'])
-        # Adjusted rand index
-        mari_Z = np.mean(ut.adj_rand_Z(results_mom, data))
-        ari_list.append(mari_Z)
-        # Percentage elbo increase
-        delta_elbo = (elbo_seq[-1] - elbo_seq[0]) / np.abs(elbo_seq[0])
-        delta_elbo_list.append(delta_elbo)
-        # Mean z entropy
-        entro = np.mean(ut.get_entropy_Z(results_mom))
-        entropy_list.append(entro)
+    # z entropies
+    entro_list = ut.get_entropy_Z(results_mom)
+    # Adjusted rand index
+    ari_Z = ut.adj_rand_Z(results_mom, data)
+    # Gamma and Pi vs Real Gamma and Pi
+    resulting_pi = upd.Pi_from_mom(results_mom)
+    resulting_gamma = upd.Gamma_from_mom(results_mom)
 
-    stats_url = os.path.join('stats', 'stats_' + 'consensus.pickle')
+    actual_pi = data['PI'][0, :, :]
+    actual_gamma = data['GAMMA'][0, :]
+
+    stats_url = os.path.join('stats', 'stats_' + 'one_net.pickle')
     print('Saving file to {:s} ... '.format(stats_url))
-    stats_dict = {'chd_list': chd_list, 'ari_list': ari_list, 'delta_elbo_list': delta_elbo_list, 'entropy_list': entropy_list}
+    stats_dict = {
+        'entro_list': entro_list,
+        'ari_Z': ari_Z,
+        'elbo_seq': elbo_seq,
+        'resulting_pi': resulting_pi,
+        'resulting_gamma': resulting_gamma,
+        'actual_pi': actual_pi,
+        'actual_gamma': actual_gamma,
+        }
     pickle.dump(stats_dict, open(stats_url, 'wb'))
     sys.exit()
 

@@ -260,8 +260,6 @@ def get_gamma_pi(
         eprime = (SNR - cSNR_prime) ** 2
         # We obtain the acceptance probability
         p = accept_prob(e, eprime, T_init / (iteration))
-        # if(counter > 5000) and (counter % 25 == 0):
-        # 	pdb.set_trace()
         if npr.binomial(1, p, 1) == 1:
             if (eprime > e) and verbose == True:
                 print("Jumping to state with higher Energy")
