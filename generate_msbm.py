@@ -400,7 +400,7 @@ def create_msbm(
             print("GENERATING PROTOTYPE NUMBER: {:d}".format(m))
         GAMMA[m, :], PI[m, :] = get_gamma_pi(
             dii=dii, dij=dij, Q=Q, SNR=SNR,
-            maxIter=80000, tol=tol, n=N, verbose=verbose)
+            maxIter=120000, tol=tol, n=N, verbose=verbose)
 
     Z = np.zeros((K, N, Q))
     X = np.zeros((K, N, N))
