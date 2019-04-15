@@ -92,6 +92,11 @@ def init_TAU(data, hyper, mode='random'):
                 seeds = npr.choice(data['N'], hyper['Q'], replace=False)
                 for q in range(hyper['Q']):
                     dists = nx.shortest_path_length(G,source= seeds[q])
+                    #handle disconnected nodes
+                    missing = np.array([(j not in dists.keys()) for j in range(data['N'])])
+                    missing = np.array(range(data['N']))[missing]
+                    for j in missing:
+                        dists[j] = 100
                     dists = [dists[key] for key in sorted(dists.keys())]
                     TAU[k,m,: , q] = np.exp2(-np.array(dists))
                 if mode == 'distance_sparse':

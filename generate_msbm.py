@@ -15,6 +15,65 @@ from scipy import optimize
 from scipy import sparse
 
 
+def get_beta_moms(c, n, Q, SNR, scale = 0.7):
+    """
+    Obtain the in and off diagonal means and variances of the beta priors
+    for the Pi matrix of inter connection probabilities. The betas are such that
+    the expected values determine a SSBM and the variances concentrate 80% mass
+    in the intervals (E(Beta) - scale*E(Beta), E(Beta) - scale*E(Beta))
+    ----------
+    PARAMETERS:
+    c : double 
+        average degree of the network
+    SNR : double
+        Chernoff-Hellinger Divergence detectability statistic
+    n : integer
+        number of nodes
+    Q : integer
+    	number of communities
+    scale : double
+    	determines the variance of the beta distribution
+    RETURNS:
+    alpha_ii : double
+    	alpha parameter of beta distribution for in-diagonal connection probability
+    beta_ii : double
+    	beta parameter of beta distribution for in-diagonal connection probability
+    alpha_ij : double
+    	alpha parameter of beta distribution for off-diagonal connection probability
+    beta_ij : double
+    	beta parameter of beta distribution for off-diagonal connection probability
+    """	
+    #Constraint 1 is degree: mii + (Q-1)mij = Q*c/n
+    #Constraint 2 is detectability in SSBM: (\sqrt(mii) - \sqrt(mij))^2 = Q*SNR*ln(n)/n
+    #We solve the quadratic for \sqrt(pii):
+    b = (2*(Q-1)/Q)*np.sqrt(Q*SNR*np.log(n)/n)
+    c = (Q-1)*SNR*np.log(n)/n - c/n
+
+    sq_mii = (-b - np.sqrt(b**2 - 4*c))/2
+    mii = sq_mii**2
+    #Now we use constraint 1 to find mij
+    mij = (mii - Q*c/np.log(n))/(Q-1)
+    #Next we find alpha and beta that produce those moments and concentrations
+    def f_ii(t):
+    	prob = beta.cdf(mii + scale*mii ,t*mii,t*(1-mii))\
+    	 - beta.cdf(mii - scale*mii, t*mii,t*(1-mii))
+    	return(prob - 0.8)
+    #We find the optimal value of t:
+    tii = optimize.brentq(f_ii, 0.1, 200000)
+
+    def f_ij(t):
+    	prob = beta.cdf(mij + scale*mij ,t*mij,t*(1-mij))\
+    	 - beta.cdf(mij - scale*mij, t*mij,t*(1-mij))
+    	return(prob - 0.8)
+    tij = optimize.brentq(f_ij, 0.1, 200000)
+    
+    alpha_ii = tii*mii
+    beta_ii = tii*(1-mii)
+    alpha_ij = tij*mij
+    beta_ij = tij*(1-mij)
+
+    return alpha_ii, beta_ii, alpha_ij, beta_ij
+
 def getavgDeg(gamma, pi, n):
     """
     Obtain the average degree for an n-node network with community
@@ -54,9 +113,9 @@ def getSNR(gamma, pi):
     com_i = 0
     com_j = 0
     # Iterate over all different pairs of columns
-    for i in range(0, PQ.shape[1] - 1):
-        for j in range(0, PQ.shape[1] - 1):
-            if i != j:
+    for i in range(PQ.shape[1]):
+        for j in range(PQ.shape[1]):
+            if i < j:
                 prof_i = PQ[:, i]
                 prof_j = PQ[:, j]
                 new_snr = CHDiv(prof_i, prof_j)
@@ -119,9 +178,8 @@ def accept_prob(e, eprime, T):
 # can constraint on a sample Dt f-divergence, which will determine
 # asymptotic detectability. For the constrained sampling we use simulated annealing.
 
-
 def get_gamma_pi(
-        dii, dij, vdir=0.015,
+        c, vdir=0.015,
         Q=4, sampling='constrained', SNR=None,
         maxIter=100, tol=1e-08, n=100, verbose=False):
     """
@@ -143,10 +201,8 @@ def get_gamma_pi(
         which correspond to deterministic annealing
     vdir : double
         variance of the homogeneous dirichlet distribution
-    dii : double
-        average degree whithin community, it's assumed to grow logarithmically.
-    dij : double
-        average degree across community, it's assumed to grow logarithmically.
+    c : double
+        average degree of the network
     SNR : double
         target signal to noise ratio for constrained sampling
     maxIter : int
@@ -164,17 +220,11 @@ def get_gamma_pi(
     alpha = ((Q - 1) / (vdir * Q ** 2) + 1) / Q
     gamma = npr.dirichlet(np.repeat(alpha, Q), 1)
 
-    # Beta parameters alpha_ii and beta_ii
-    mii = np.double(dii) / n
-    vii = (np.double(dii) / 10) / (n)
-
-    alpha_ii = ((mii ** 2) * (1 - mii) - mii * vii) / vii
-    beta_ii = (1 / vii) * (mii * (1 - mii) - vii) * (1 - mii)
-    # Beta parameters alpha_ij and beta_ij
-    mij = np.double(dij) / n
-    vij = (np.double(dij) / 10) / (n)
-    alpha_ij = ((mij ** 2) * (1 - mij) - mij * vij) / vij
-    beta_ij = (1 / vij) * (mij * (1 - mij) - vij) * (1 - mij)
+    #Find alpha and beta parameters for beta prior of Pi matrix
+    if SNR is None:
+        alpha_ii, beta_ii, alpha_ij, beta_ij = get_beta_moms(c, n, Q, SNR = 1.05, scale = 0.5)
+    else:
+        alpha_ii, beta_ii, alpha_ij, beta_ij = get_beta_moms(c, n, Q, SNR, scale = 0.5)
 
     ALPHA_0 = np.ones((Q, Q))*alpha_ij + np.diag( np.repeat(alpha_ii - alpha_ij,Q))
     BETA_0 = np.ones((Q,Q))*beta_ij + np.diag( np.repeat(beta_ii - beta_ij,Q))
@@ -191,9 +241,8 @@ def get_gamma_pi(
         print('---------------------------------------------------')
     T_init = 1.01
     # Normalize the average degree of the network to its expected value
-    targetDeg = (np.double(dii) + (Q - 1) * np.double(dij)) / Q
     avgDeg = getavgDeg(gamma, pi * (n / np.log(n)), n)
-    pi = pi * targetDeg / avgDeg
+    pi = pi * c / avgDeg
     if SNR is None:
         sys.exit("Unspecified SNR. The detectability threshold is SNR = 1")
     counter = 0
@@ -223,7 +272,7 @@ def get_gamma_pi(
 
             T_init = 1.01
             avgDeg = getavgDeg(gamma, pi * (n / np.log(n)), n)
-            pi = pi * targetDeg / avgDeg
+            pi = pi * c / avgDeg
             pi_constant = pi * (n / np.log(n))
             cSNR, com_i, com_j = getSNR(gamma, pi_constant)
             iteration = 1
@@ -251,16 +300,17 @@ def get_gamma_pi(
 
         # We renormalize to preserve the average degree
         avgDeg_prime = getavgDeg(gamma_prime, pi_prime * (n / np.log(n)), n)
-        pi_prime = pi_prime * (targetDeg / avgDeg_prime)
+        pi_prime = pi_prime * (c / avgDeg_prime)
 
         # Chernoff-Hellinger Divergence must be computed on a constant matrix pi, before the n/log(n) factor
         pi_prime_constant = pi_prime * (n / np.log(n))
         cSNR_prime, com_i_prime, com_j_prime = getSNR(gamma_prime, pi_prime_constant)
 
         eprime = (SNR - cSNR_prime) ** 2
-        # We obtain the acceptance probability
+        # We obtain the acceptance probability     
         p = accept_prob(e, eprime, T_init / (iteration))
         if npr.binomial(1, p, 1) == 1:
+            print("accepted change")
             if (eprime > e) and verbose == True:
                 print("Jumping to state with higher Energy")
             e = eprime
@@ -270,6 +320,7 @@ def get_gamma_pi(
             com_i = com_i_prime
             com_j = com_j_prime
             pi_constant = pi * (n / np.log(n))
+    
     if verbose == True:
         print('Finished simulated annealing after:{:d} iterations '.format(counter - 1))
         print('Resulting SNR is:{:04f}, target was {:04f} '.format(cSNR, SNR))
@@ -353,7 +404,7 @@ def sample_X_und(pi, Z):
 # ############### MODEL CREATION ################
 def create_msbm(
         Q, N, M, K,
-        dii=36.0, dij=2.0,
+        c = 12,
         SNR=1.05,
         tol=1e-06,
         path_data='data',
@@ -372,10 +423,8 @@ def create_msbm(
         number of different SBM models
     K : integer
         number of networks to sample
-    dii : double
-        dii*log(n) is the expected in-degree
-    dii : double
-        dii*log(n) is the expected in-degree
+    c : double
+        average degree of network
     SNR : double
         the Chernof-Hellinger divergence of all the prototypes,
         we want it to be greater than 1 so that the communities are detectable.
@@ -399,7 +448,7 @@ def create_msbm(
         if verbose == True:
             print("GENERATING PROTOTYPE NUMBER: {:d}".format(m))
         GAMMA[m, :], PI[m, :] = get_gamma_pi(
-            dii=dii, dij=dij, Q=Q, SNR=SNR,
+            c = 12, Q=Q, SNR=SNR,
             maxIter=120000, tol=tol, n=N, verbose=verbose)
 
     Z = np.zeros((K, N, Q))
@@ -415,8 +464,7 @@ def create_msbm(
     data['N'] = N
     data['M'] = M
     data['K'] = K
-    data['dii'] = dii
-    data['dij'] = dij
+    data['c'] = c
     data['SNR'] = SNR
 
     data['RHO'] = RHO
@@ -454,7 +502,7 @@ def main():
 
     data = create_msbm(
         Q=4, N=200, M=3, K=50,
-        dii=36.00, dij=2.0,
+        c = 12,
         SNR=1.05,
         path_data=path_data,
         fname=fname,

@@ -36,7 +36,7 @@ def main():
                 fname='detectability_N{}_{}'.format(N,i),
                 verbose=True)
     #Next, we generate 50 networks for each parameter for N at the detectability threshold
-    # for Q in [3, 4, 5]:
+    # for Q in [2, 3, 4]:
     #     print("generating networks with {} nodes".format(N))
     #     for i in range(2):
     #         data = gn.create_msbm(

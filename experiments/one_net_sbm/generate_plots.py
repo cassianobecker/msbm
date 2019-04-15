@@ -48,12 +48,16 @@ def main():
             data4[i,j] = statistics['resulting_pi'][q_prime, r_prime]
     plt.imshow(data3, origin="upper", norm=colors.PowerNorm(0.5), cmap='Blues', interpolation='nearest')
     plt.colorbar()
-    plt.title("Real edge probabilities", fontsize= 16)
+    plt.title(r"Real edge probabilities, $\alpha$", fontsize= 16)
+    plt.rc('text', usetex=True)
+    plt.rc('font', family='serif')
     plot_file = os.path.join('plots', 'plot_' + 'actual_pi.svg')
     plt.savefig(plot_file, format="svg")
+    plt.clf()
 
     #and we plot the resulting ones
     plt.imshow(data4, origin="upper", norm=colors.PowerNorm(0.5), cmap='Blues', interpolation='nearest')
+    plt.colorbar()
     plt.title("Predicted edge probabilities", fontsize= 16)
     plot_file = os.path.join('plots', 'plot_' + 'pred_pi.svg')
     plt.savefig(plot_file, format="svg")
