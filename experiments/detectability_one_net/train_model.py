@@ -39,7 +39,7 @@ def main():
 
         par = dict()
         par['MAX_ITER'] = 1000
-        par['TOL_ELBO'] = 1.e-16
+        par['TOL_ELBO'] = 1.e-12
         par['ALG'] = 'cavi'
 
         results_mom, elbo_seq = varinf.infer(data, prior, hyper, mom, par)

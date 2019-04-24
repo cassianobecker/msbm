@@ -2,8 +2,9 @@
 # then trains an msbm of a single type in a "consensus" type of way. Then we report the
 # average rand_index and average entropy of the z variables, which are indicators of how well 
 # the algorithm is learning the true model. 
-import os
+import os, sys
 import pickle
+sys.path.insert(0, '../..')
 import util as ut
 import init_msbm_vi as im
 import varinf

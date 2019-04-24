@@ -8,11 +8,12 @@ def init_moments(data, hyper):
     mom = dict()
 
     mode = 'random'
-
     mom['ALPHA'] = init_ALPHA(data, hyper, mode)
     mom['BETA'] = init_BETA(data, hyper, mode)
     mom['NU'] = init_NU(data, hyper, mode)
     mom['ZETA'] = init_ZETA(data, hyper, mode)
+
+    mode = 'uniform'
     mom['MU'] = init_MU(data, hyper, mode)
     mom['LOG_MU'] = np.log(mom['MU'])
 

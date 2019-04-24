@@ -15,17 +15,17 @@ from scipy import optimize
 from scipy import sparse
 
 
-def get_beta_moms(c, n, Q, SNR, scale = 0.7):
+def get_beta_moms(c, n, Q, SNR, scale, debugging = False):
     """
     Obtain the in and off diagonal means and variances of the beta priors
     for the Pi matrix of inter connection probabilities. The betas are such that
     the expected values determine a SSBM and the variances concentrate 80% mass
-    in the intervals (E(Beta) - scale*E(Beta), E(Beta) - scale*E(Beta))
+    in the intervals (E(Beta) - scale*E(Beta), E(Beta) + scale*E(Beta))
     ----------
     PARAMETERS:
     c : double 
         average degree of the network
-    SNR : double
+    SNR : double array
         Chernoff-Hellinger Divergence detectability statistic
     n : integer
         number of nodes
@@ -46,25 +46,26 @@ def get_beta_moms(c, n, Q, SNR, scale = 0.7):
     #Constraint 1 is degree: mii + (Q-1)mij = Q*c/n
     #Constraint 2 is detectability in SSBM: (\sqrt(mii) - \sqrt(mij))^2 = Q*SNR*ln(n)/n
     #We solve the quadratic for \sqrt(pii):
-    b = (2*(Q-1)/Q)*np.sqrt(Q*SNR*np.log(n)/n)
-    c = (Q-1)*SNR*np.log(n)/n - c/n
+    K1 = c*Q/n
+    K2 = Q*SNR*np.log(n)/n
 
-    sq_mii = (-b - np.sqrt(b**2 - 4*c))/2
-    mii = sq_mii**2
-    #Now we use constraint 1 to find mij
-    mij = (mii - Q*c/np.log(n))/(Q-1)
+    y = (-2*np.sqrt(K2) + np.sqrt(4*K2 - 4*Q*(K2-K1)))/(2*Q)
+    x = y + np.sqrt(K2)
+
+    mii = x**2
+    mij = y**2
     #Next we find alpha and beta that produce those moments and concentrations
     def f_ii(t):
     	prob = beta.cdf(mii + scale*mii ,t*mii,t*(1-mii))\
     	 - beta.cdf(mii - scale*mii, t*mii,t*(1-mii))
-    	return(prob - 0.8)
+    	return(prob - 0.9)
     #We find the optimal value of t:
     tii = optimize.brentq(f_ii, 0.1, 200000)
 
     def f_ij(t):
     	prob = beta.cdf(mij + scale*mij ,t*mij,t*(1-mij))\
     	 - beta.cdf(mij - scale*mij, t*mij,t*(1-mij))
-    	return(prob - 0.8)
+    	return(prob - 0.9)
     tij = optimize.brentq(f_ij, 0.1, 200000)
     
     alpha_ii = tii*mii
@@ -72,6 +73,8 @@ def get_beta_moms(c, n, Q, SNR, scale = 0.7):
     alpha_ij = tij*mij
     beta_ij = tij*(1-mij)
 
+    if debugging:
+        print("mii: {}, mij: {}".format(mii, mij))
     return alpha_ii, beta_ii, alpha_ij, beta_ij
 
 def getavgDeg(gamma, pi, n):
@@ -222,9 +225,9 @@ def get_gamma_pi(
 
     #Find alpha and beta parameters for beta prior of Pi matrix
     if SNR is None:
-        alpha_ii, beta_ii, alpha_ij, beta_ij = get_beta_moms(c, n, Q, SNR = 1.05, scale = 0.5)
+        alpha_ii, beta_ii, alpha_ij, beta_ij = get_beta_moms(c, n, Q, SNR = 1.05 + 0.55, scale = 0.5)
     else:
-        alpha_ii, beta_ii, alpha_ij, beta_ij = get_beta_moms(c, n, Q, SNR, scale = 0.5)
+        alpha_ii, beta_ii, alpha_ij, beta_ij = get_beta_moms(c, n, Q, SNR + 0.55, scale = 0.5)
 
     ALPHA_0 = np.ones((Q, Q))*alpha_ij + np.diag( np.repeat(alpha_ii - alpha_ij,Q))
     BETA_0 = np.ones((Q,Q))*beta_ij + np.diag( np.repeat(beta_ii - beta_ij,Q))
@@ -260,7 +263,7 @@ def get_gamma_pi(
         counter += 1
         iteration += 1
         # We restart the simulated annealing every 10000 iterations
-        if counter % 20000 == 0:
+        if counter % 50000 == 0:
             if verbose == True:
                 time.sleep(1.5)
                 print('Restarting Simulated Annealing')
@@ -277,8 +280,8 @@ def get_gamma_pi(
             cSNR, com_i, com_j = getSNR(gamma, pi_constant)
             iteration = 1
         # End the restarting if
-        pi_prime = pi
-        gamma_prime = gamma
+        pi_prime = pi.copy()
+        gamma_prime = gamma.copy()
         # We do the local step and compute the energy of that state
         # With probability .5 we change gamma with probability .5 we change pi
         # We do a random step where the average degree of the network is preserved
@@ -292,11 +295,11 @@ def get_gamma_pi(
                 new_value = npr.beta(alpha_ii, beta_ii)
             else:
                 new_value = npr.beta(alpha_ij, beta_ij)
-            pi_prime[ind_i, ind_j] = 0.99 * pi_prime[ind_i, ind_j] + 0.01 * new_value
-            pi_prime[ind_j, ind_i] = 0.99 * pi_prime[ind_j, ind_i] + 0.01 * new_value
+            pi_prime[ind_i, ind_j] = 0.8 * pi_prime[ind_i, ind_j] + 0.2 * new_value
+            pi_prime[ind_j, ind_i] = 0.8 * pi_prime[ind_j, ind_i] + 0.2 * new_value
         # And for gamma
         else:
-            gamma_prime = 0.99 * gamma_prime + 0.01 * npr.dirichlet(np.repeat(alpha, Q), 1)
+            gamma_prime = 0.9 * gamma_prime + 0.1 * npr.dirichlet(np.repeat(alpha, Q), 1)
 
         # We renormalize to preserve the average degree
         avgDeg_prime = getavgDeg(gamma_prime, pi_prime * (n / np.log(n)), n)
@@ -310,12 +313,9 @@ def get_gamma_pi(
         # We obtain the acceptance probability     
         p = accept_prob(e, eprime, T_init / (iteration))
         if npr.binomial(1, p, 1) == 1:
-            print("accepted change")
-            if (eprime > e) and verbose == True:
-                print("Jumping to state with higher Energy")
             e = eprime
-            gamma = gamma_prime
-            pi = pi_prime
+            gamma = gamma_prime.copy()
+            pi = pi_prime.copy()
             cSNR = cSNR_prime
             com_i = com_i_prime
             com_j = com_j_prime
@@ -324,7 +324,7 @@ def get_gamma_pi(
     if verbose == True:
         print('Finished simulated annealing after:{:d} iterations '.format(counter - 1))
         print('Resulting SNR is:{:04f}, target was {:04f} '.format(cSNR, SNR))
-    return gamma.astype(float), pi.astype(float)
+    return gamma.astype(float), pi.astype(float), cSNR.astype(float)
 
 
 def get_rho(M, vdir=0.025):
@@ -404,7 +404,7 @@ def sample_X_und(pi, Z):
 # ############### MODEL CREATION ################
 def create_msbm(
         Q, N, M, K,
-        c = 12,
+        c,
         SNR=1.05,
         tol=1e-06,
         path_data='data',
@@ -447,8 +447,8 @@ def create_msbm(
     for m in range(M):
         if verbose == True:
             print("GENERATING PROTOTYPE NUMBER: {:d}".format(m))
-        GAMMA[m, :], PI[m, :] = get_gamma_pi(
-            c = 12, Q=Q, SNR=SNR,
+        GAMMA[m, :], PI[m, :], cSNR = get_gamma_pi(
+            c = c, Q=Q, SNR= SNR[m],
             maxIter=120000, tol=tol, n=N, verbose=verbose)
 
     Z = np.zeros((K, N, Q))
@@ -465,7 +465,7 @@ def create_msbm(
     data['M'] = M
     data['K'] = K
     data['c'] = c
-    data['SNR'] = SNR
+    data['SNR'] = cSNR
 
     data['RHO'] = RHO
     data['Y'] = Y
@@ -501,9 +501,9 @@ def main():
         fname = sys.argv[2]
 
     data = create_msbm(
-        Q=4, N=200, M=3, K=50,
-        c = 12,
-        SNR=1.05,
+        Q=2, N=200, M=3, K=50,
+        c = 20,
+        SNR=1.5,
         path_data=path_data,
         fname=fname,
         verbose=True)

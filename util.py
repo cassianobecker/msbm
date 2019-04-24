@@ -52,6 +52,13 @@ def get_entropy_Z(mom):
 
     return entro
 
+
+def get_entropy_Y(mom):
+    
+    entro = [np.sum(entr(mom['MU'][k, :])) for k in range(mom['MU'].shape[0])]
+
+    return entro
+
 def peek_mom_TAU(mom, seed = None):
     """
     A peek at the TAU of 5 nodes selected at random from one 
