@@ -1,5 +1,5 @@
 import pdb
-#import updates_msbm_vi as msbm
+import updates_msbm_vi as msbm
 import updates_msbm2_vi as msbm
 from util import *
 
@@ -145,7 +145,7 @@ def infer(data, prior, hyper, mom, par):
             mom_new['NU'] = (1.0 - par['nat_step']) * mom['NU'] + par['nat_step'] * NU
 
             LOG_MU = msbm.update_Y(data, prior, hyper, mom, par)
-            mom_new['LOG_MU'] = (1.0 - par['nat_step']) * mom['LOG_MU'] + par['nat_step'] * LOG_MU
+            mom_new['LOG_MU'] = (1.0 - par['nat_step']**6) * mom['LOG_MU'] + (par['nat_step']**6) * LOG_MU
             mom_new['MU'] = msbm.par_from_mom_MU(mom_new, par)
 
             # LOG_MU = msbm.update_Y(data, prior, hyper, mom, par)

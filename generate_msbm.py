@@ -435,6 +435,17 @@ def create_msbm(
     verbose : boolean
         set to True to obtain details during the execution
     """
+    #Type handling for c and SNR
+    if not isinstance(c, list):
+        c = [c]
+    if not isinstance(SNR, list):
+        SNR = [SNR]
+    if len(c) == 1:
+        c = M*c
+    if len(SNR) == 1:
+        SNR = M*SNR
+    if (not len(c) == M) or (not len(SNR) == M):
+        sys.exit("SNR, c input dimension mismatch with M")    
     if verbose == True:
         print('---- Creating MSBM mode with N = {:d}, K = {:d}, Q = {:d} and M = {:d} ------'
               .format(N, K, Q, M))
@@ -448,7 +459,7 @@ def create_msbm(
         if verbose == True:
             print("GENERATING PROTOTYPE NUMBER: {:d}".format(m))
         GAMMA[m, :], PI[m, :], cSNR = get_gamma_pi(
-            c = c, Q=Q, SNR= SNR[m],
+            c = c[m], Q=Q, SNR= SNR[m],
             maxIter=120000, tol=tol, n=N, verbose=verbose)
 
     Z = np.zeros((K, N, Q))

@@ -18,7 +18,7 @@ def main():
         data = gn.create_msbm(
             Q=3, N=120, M=1, K=128,
             c = 18,
-            SNR= [detec],
+            SNR= detec,
             path_data='data',
             fname='consensus_{:03.0f}'.format(100 * detec),
             verbose=True)

@@ -16,7 +16,7 @@ def main():
     for detec in [0.5, 0.8, 1, 1.2, 1.5]:
         #we generate 50 networks for each parameter, and store it in a list
         print("generating networks with SNR:{}".format(detec))
-        for i in range(6):
+        for i in range(50):
             data = gn.create_msbm(
                 Q=3, N=300, M=1, K=1,
                 c= 15,
@@ -25,9 +25,9 @@ def main():
                 fname='detectability_CH{:03.0f}_{}'.format(100 * detec,i),
                 verbose=True)
     #Next, we generate 50 networks for each parameter for N at the detectability threshold
-    for N in [100, 400, 1000]:
+    for N in [75, 150, 300]:
         print("generating networks with {} nodes".format(N))
-        for i in range(6):
+        for i in range(50):
             data = gn.create_msbm(
                 Q=3, N=N, M=1, K=1,
                 c = 15,

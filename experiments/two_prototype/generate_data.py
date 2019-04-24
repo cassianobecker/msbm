@@ -16,9 +16,9 @@ def main():
     data = gn.create_msbm(
         Q=3, N=128, M=2, K=60,
         c = 25,
-        SNR= [1.05, 2.7],
+        SNR= [1.05, 2.5],
         path_data='data',
-        fname='twoprototype_105_300',
+        fname='twoprototype_105_250',
         verbose=True)
     print("First Prototype:")
     print(data['PI'][0].round(2))

@@ -6,14 +6,14 @@ import networkx as nx
 def init_moments(data, hyper):
 
     mom = dict()
-
+    npr.seed(1)
     mode = 'random'
     mom['ALPHA'] = init_ALPHA(data, hyper, mode)
     mom['BETA'] = init_BETA(data, hyper, mode)
     mom['NU'] = init_NU(data, hyper, mode)
     mom['ZETA'] = init_ZETA(data, hyper, mode)
 
-    mode = 'uniform'
+    mode = 'some_truth'
     mom['MU'] = init_MU(data, hyper, mode)
     mom['LOG_MU'] = np.log(mom['MU'])
 
@@ -70,6 +70,11 @@ def init_MU(data, hyper, mode='random'):
         MU = npr.rand(data['K'], hyper['M'])
     if mode == 'uniform':
         MU = np.ones((data['K'], hyper['M'])) / hyper['M']
+    if mode == 'some_truth' :
+        MU = data['Y']
+        lamb = 0
+        inds = npr.choice(data['Y'].shape[0], int(lamb*data['Y'].shape[0]), replace=False)   
+        MU[inds] = npr.rand(len(inds), hyper['M'])
 
     MU = MU / np.expand_dims(np.sum(MU, axis=1), axis=1)
 
