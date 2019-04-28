@@ -1,3 +1,5 @@
+import sys
+sys.path.insert(0, '..')
 import updates_msbm_vi_iter
 import updates_msbm_vi
 import updates_msbm2_vi_iter
@@ -8,6 +10,7 @@ import util
 import init_msbm_vi as im
 import numpy as np
 import numpy.random as npr
+import pdb
 
 
 class TestUpdates:
@@ -21,12 +24,12 @@ class TestUpdates:
 
         data = util.load_data(file_url)
         self.data = data
-
         print('')
 
         K = 8
 
         data['X'] = data['X'][:K, :, :]
+        data['NON_X'] = data['NON_X'][:K, :, :]
 
         data['K'] = K
         data['Y'] = data['Y'][:K, :]
@@ -72,17 +75,21 @@ class TestUpdates:
     def test_update_Pi(self):
         print('--- Pi ---')
 
-        NEW_ALPHA1, NEW_BETA1 = self.msbm_einsum.update_Pi(self.data, self.prior, self.hyper, self.mom, self.par)
+        NEW_ALPHA1, NEW_BETA1 = self.msbm_einsum.update_Pi(self.data, self.prior, self.hyper, self.mom, self.par,
+                                                         remove_self_loops=self.remove_self_loops)
         NEW_ALPHA2, NEW_BETA2 = self.msbm_iter.update_Pi(self.data, self.prior, self.hyper, self.mom, self.par,
                                                          remove_self_loops=self.remove_self_loops)
 
+        print("--ALPHA:")
         self.eval_diff(NEW_ALPHA1, NEW_ALPHA2)
+        print("--BETA:")
         self.eval_diff(NEW_BETA1, NEW_BETA2)
 
     def test_update_Z(self):
         print('--- Z ---')
 
-        NEW_LOG_TAU1 = self.msbm_einsum.update_Z(self.data, self.prior, self.hyper, self.mom, self.par)
+        NEW_LOG_TAU1 = self.msbm_einsum.update_Z(self.data, self.prior, self.hyper, self.mom, self.par, 
+                                                remove_self_loops=self.remove_self_loops)
         NEW_LOG_TAU2 = self.msbm_iter.update_Z(self.data, self.prior, self.hyper, self.mom, self.par,
                                                remove_self_loops=self.remove_self_loops)
 
@@ -91,7 +98,8 @@ class TestUpdates:
     def test_update_Y(self):
         print('--- Y ---')
 
-        NEW_LOG_MU1 = self.msbm_einsum.update_Y(self.data, self.prior, self.hyper, self.mom, self.par)
+        NEW_LOG_MU1 = self.msbm_einsum.update_Y(self.data, self.prior, self.hyper, self.mom, self.par,
+                                                remove_self_loops=self.remove_self_loops)
         NEW_LOG_MU2 = self.msbm_iter.update_Y(self.data, self.prior, self.hyper, self.mom, self.par,
                                               remove_self_loops=self.remove_self_loops)
 
@@ -100,7 +108,8 @@ class TestUpdates:
     def test_update_gamma(self):
         print('---  Gamma ---')
 
-        NEW_NU1 = self.msbm_einsum.update_gamma(self.data, self.prior, self.hyper, self.mom, self.par)
+        NEW_NU1 = self.msbm_einsum.update_gamma(self.data, self.prior, self.hyper, self.mom, self.par, 
+                                                remove_self_loops=self.remove_self_loops)
         NEW_NU2 = self.msbm_iter.update_gamma(self.data, self.prior, self.hyper, self.mom, self.par)
 
         self.eval_diff(NEW_NU1, NEW_NU2)
@@ -108,7 +117,8 @@ class TestUpdates:
     def test_update_rho(self):
         print('---  Rho ---')
 
-        NEW_ZETA1 = self.msbm_einsum.update_rho(self.data, self.prior, self.hyper, self.mom, self.par)
+        NEW_ZETA1 = self.msbm_einsum.update_rho(self.data, self.prior, self.hyper, self.mom, self.par, 
+                                                remove_self_loops=self.remove_self_loops)
         NEW_ZETA2 = self.msbm_iter.update_rho(self.data, self.prior, self.hyper, self.mom, self.par)
 
         self.eval_diff(NEW_ZETA1, NEW_ZETA2)

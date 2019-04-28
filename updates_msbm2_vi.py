@@ -10,16 +10,20 @@ from scipy.stats import dirichlet
 # ################ UPDATE FUNCTIONS #########################
 
 
-def update_Pi(data, prior, hyper, mom, par):
+def update_Pi(data, prior, hyper, mom, par, remove_self_loops=True):
 
     str_sum = 'km, kij, kmiq, kmjr -> mqr'
 
     NEW_ALPHA = par['kappa']*(prior['ALPHA_0']
                               + np.einsum(str_sum, mom['MU'], data['X'],
                                           mom['TAU'], mom['TAU']) - 1.0) + 1.0
+    if remove_self_loops:
+        NON_EDGES = data['NON_X']
+    else:
+        NON_EDGES = 1.0 - data['X']
 
     NEW_BETA = par['kappa']*(prior['BETA_0']
-                             + np.einsum(str_sum, mom['MU'], 1.0 - data['X'],
+                             + np.einsum(str_sum, mom['MU'], NON_EDGES,
                                          mom['TAU'], mom['TAU']) - 1.0) + 1.0
 
     return NEW_ALPHA, NEW_BETA
@@ -29,21 +33,22 @@ def Pi_from_mom(mom):
     Pi_estimate = beta.stats(mom['ALPHA'],mom['BETA'],moments='m')
     return Pi_estimate
 
-def update_Z(data, prior, hyper, mom, par):
+def update_Z(data, prior, hyper, mom, par, remove_self_loops=True):
+
+    if remove_self_loops:
+        NON_EDGES = data['NON_X']
+    else:
+        NON_EDGES = 1.0 - data['X']
 
     NU_diff = sp.psi(mom['NU']) - sp.psi(np.einsum('ij,k->ik', mom['NU'], np.ones(hyper['Q'])))
     #replaced mom['MU'] with np.ones(mom['NU']) to obtain the desired dimensions
     S1 = np.einsum('km,mq,i->kmiq', np.ones(mom['MU'].shape), NU_diff, np.ones(data['N']))
+    #TODO: Speed up by not computing psi(alpha + beta) twice
+    P_EDGES = np.einsum('kij,mqr->mqrijk', data['X'], sp.psi(mom['ALPHA']) - sp.psi(mom['ALPHA'] + mom['BETA']))
 
-    P2 = np.einsum('mqr,i,j,k->mqrijk',
-                   sp.psi(mom['BETA']) - sp.psi(mom['ALPHA'] + mom['BETA']),
-                   np.ones(data['N']), np.ones(data['N']), np.ones(data['K']))
+    P_NONEDGES = np.einsum('kij,mqr->mqrijk', NON_EDGES, sp.psi(mom['BETA']) - sp.psi(mom['ALPHA'] + mom['BETA']))
 
-    P1 = np.einsum('kij,mqr->mqrijk',
-                   data['X'],
-                   sp.psi(mom['ALPHA']) - sp.psi(mom['BETA']))
-
-    S2 = np.einsum('km,kmjr,mqrijk->kmiq', mom['MU'], mom['TAU'], P1 + P2)
+    S2 = np.einsum('km,kmjr,mqrijk->kmiq', mom['MU'], mom['TAU'], P_EDGES + P_NONEDGES)
 
     NEW_LOG_TAU = par['kappa']*(S1 + S2)
 
@@ -59,19 +64,22 @@ def TAU_from_LOG_TAU(mom, par):
     return NEW_TAU
 
 
-def update_Y(data, prior, hyper, mom, par):
+def update_Y(data, prior, hyper, mom, par, remove_self_loops=True):
+
+    if remove_self_loops:
+        NON_EDGES = data['NON_X']
+    else:
+        NON_EDGES = 1.0 - data['X']
 
     ZETA_diff = sp.psi(mom['ZETA']) - sp.psi(sum(mom['ZETA']))
 
     S1 = np.einsum('m,k->km', ZETA_diff, np.ones(data['K']))
 
-    P1 = np.einsum('kij,mqr->mqrijk', data['X'], sp.psi(mom['ALPHA']) - sp.psi(mom['BETA']))
+    P_EDGES = np.einsum('kij,mqr->mqrijk', data['X'], sp.psi(mom['ALPHA']) - sp.psi(mom['ALPHA'] + mom['BETA']))
 
-    P2 = np.einsum('mqr,i,j,k->mqrijk',
-                   sp.psi(mom['BETA']) - sp.psi(mom['ALPHA'] + mom['BETA']),
-                   np.ones(data['N']), np.ones(data['N']), np.ones(data['K']))
+    P_NONEDGES = np.einsum('kij,mqr->mqrijk', NON_EDGES, sp.psi(mom['BETA']) - sp.psi(mom['ALPHA'] + mom['BETA']))
 
-    S2 = np.einsum('kmiq,kmjr,mqrijk->km', mom['TAU'], mom['TAU'], P1 + P2)
+    S2 = np.einsum('kmiq,kmjr,mqrijk->km', mom['TAU'], mom['TAU'], P_EDGES + P_NONEDGES)
 
     NEW_LOG_MU = par['kappa']*(S1 + S2)
     return NEW_LOG_MU
@@ -86,7 +94,7 @@ def par_from_mom_MU(mom, par):
     return NEW_MU2
 
 
-def update_gamma(data, prior, hyper, mom, par):
+def update_gamma(data, prior, hyper, mom, par, remove_self_loops=True):
 
     NEW_NU = par['kappa']*(prior['NU_0'] + np.einsum('km,kmiq->mq', mom['MU'], mom['TAU']) - 1.0) + 1.0
 
@@ -97,7 +105,7 @@ def Gamma_from_mom(mom):
     Gamma_estimate = [dirichlet.mean(mom['NU'][m,:]) for m in range(mom['NU'].shape[0]) ]
     return Gamma_estimate
 
-def update_rho(data, prior, hyper, mom, par):
+def update_rho(data, prior, hyper, mom, par, remove_self_loops=True):
 
     NEW_ZETA = par['kappa']*(prior['ZETA_0'] + np.einsum('km->m', mom['MU']) - 1.0) + 1.0
 

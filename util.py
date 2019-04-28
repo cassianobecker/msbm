@@ -11,8 +11,13 @@ def load_data(data_file_url):
     print('\nLoading data from {:s} ... '.format(data_file_url))
     loaded = pickle.load(open(data_file_url, 'rb'), encoding='latin1')
     print('loaded.')
-    #(TO DO) this should only return data
-    return loaded['data']
+    #We add non-edges to the data upon loading (this was the fastest way)
+    data = loaded['data']
+    data['NON_X'] = 1.0 - data['X']
+    for i in range(data['X'].shape[1]):
+        data['NON_X'][:, i, i] = 0
+
+    return data
 
 def load_results(result_file_url):
 

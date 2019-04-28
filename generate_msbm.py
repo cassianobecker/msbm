@@ -393,7 +393,7 @@ def sample_X_und(pi, Z):
     X = np.zeros((N, N))
     for i in range(N):
         zi = find_row(Z[i, :])
-        for j in range(i, N):
+        for j in range(i+1, N):
             zj = find_row(Z[j, :])
             X[i, j] = npr.binomial(1, pi[zi, zj])
             X[j, i] = X[i, j]

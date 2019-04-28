@@ -77,7 +77,7 @@ def print_status(t, data, mom, par, elbos):
 
 
 def infer(data, prior, hyper, mom, par):
-
+    #ADD NON_X to the Data (non edges without self loops)
     par = get_default_parameters(par)
 
     print_header(data, hyper, par)
