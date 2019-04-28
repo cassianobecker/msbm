@@ -32,10 +32,9 @@ def main():
 
         # initialize moments
         mom = im.init_moments(data, hyper)
-
         par = dict()
-        par['MAX_ITER'] = 50
-        par['TOL_ELBO'] = 1.e-14
+        par['MAX_ITER'] = 500
+        par['TOL_ELBO'] = 1.e-13
         par['ALG'] = 'cavi'
 
         results_mom, elbo_seq = varinf.infer(data, prior, hyper, mom, par)

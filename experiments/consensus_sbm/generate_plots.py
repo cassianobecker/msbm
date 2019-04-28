@@ -12,9 +12,7 @@ def main():
     print("generating plots from: {}".format(stats_url))
     statistics = pickle.load(open(stats_url, 'rb'), encoding='latin1')
 
-    fig1 = plt.figure()
-    plt.scatter(statistics['chd_list'], statistics['ari_list'])
-
+    plt.plot(statistics['chd_list'], statistics['ari_list'], '-o')
     plt.xlabel(r'detectability, $\delta$', fontsize=12)
     plt.ylabel(r'average rand index, $\rho(z)$', fontsize=12)
     plt.title(r"Consensus Mixture of SBM Performance",  fontsize=16)

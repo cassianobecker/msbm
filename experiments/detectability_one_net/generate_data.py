@@ -18,7 +18,7 @@ def main():
         print("generating networks with SNR:{}".format(detec))
         for i in range(50):
             data = gn.create_msbm(
-                Q=3, N=300, M=1, K=1,
+                Q=3, N=250, M=1, K=1,
                 c= 15,
                 SNR= [detec],
                 path_data='data',
@@ -27,25 +27,25 @@ def main():
     #Next, we generate 50 networks for each parameter for N at the detectability threshold
     for N in [75, 150, 300]:
         print("generating networks with {} nodes".format(N))
-        for i in range(50):
+        for i in range(100):
             data = gn.create_msbm(
                 Q=3, N=N, M=1, K=1,
                 c = 15,
-                SNR= [1.1],
+                SNR= [1.05],
                 path_data='data',
                 fname='detectability_N{}_{}'.format(N,i),
                 verbose=True)
     #Next, we generate 50 networks for each parameter for N at the detectability threshold
-    # for Q in [2, 3, 4]:
-    #     print("generating networks with {} nodes".format(N))
-    #     for i in range(2):
-    #         data = gn.create_msbm(
-    #             Q=Q, N=300, M=1, K=1,
-    #             dii=46.0, dij=7.0,
-    #             SNR=1.2,
-    #             path_data='data',
-    #             fname='detectability_Q{}_{}'.format(Q, i),
-    #             verbose=True)
+    for Q in [2, 3, 4]:
+        print("generating networks with {} nodes".format(N))
+        for i in range(2):
+            data = gn.create_msbm(
+                Q=Q, N=200, M=1, K=1,
+                dii=46.0, dij=7.0,
+                SNR=1.2,
+                path_data='data',
+                fname='detectability_Q{}_{}'.format(Q, i),
+                verbose=True)
     sys.exit()
 
 

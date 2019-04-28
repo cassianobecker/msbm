@@ -49,24 +49,24 @@ def main():
     plt.clf()
     #we make a boxplot for N vs ari_Z
     data1 = np.array(statistics['ari_Z'])
-    fil = np.array([n == 100 for n in statistics['N']])
+    fil = np.array([n == 75 for n in statistics['N']])
     fil2= np.array([(chd>1.05)&(chd<1.15) for chd in statistics['CH_div']])
     data1 = data1[fil&fil2]
 
     data2 = np.array(statistics['ari_Z'])
-    fil = np.array([n == 400 for n in statistics['N']])
+    fil = np.array([n == 150 for n in statistics['N']])
     fil2= np.array([(chd>1.05)&(chd<1.15) for chd in statistics['CH_div']])
     data2 = data2[fil&fil2]
 
     data3 = np.array(statistics['ari_Z'])
-    fil = np.array([n == 1000 for n in statistics['N']])
+    fil = np.array([n == 300 for n in statistics['N']])
     fil2= np.array([(chd>1.05)&(chd<1.15) for chd in statistics['CH_div']])
     data3 = data3[fil&fil2]
     
     data = [data1.flatten(), data2.flatten(), data3.flatten()]
     plt.boxplot(data)
     plt.title("N vs Average Rand Index at Threshold", fontsize= 16)
-    plt.xticks(range(1,4),[100, 400, 1000], fontsize=8)
+    plt.xticks(range(1,4),[75, 150, 300], fontsize=8)
     plt.xlabel('Nodes')
     plt.ylabel('Adj. Rand Index')
     plot_file = os.path.join('plots', 'plot_' + 'boxplot_N.svg')
