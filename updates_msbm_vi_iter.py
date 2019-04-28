@@ -49,8 +49,6 @@ def get_sum_a_b_pi(m, q, r, data, mom, par, prior, remove_self_loops):
 def update_Z(data, prior, hyper, mom, par, remove_self_loops):
 
     NEW_LOG_TAU = np.empty((data['K'], data['M'], data['N'], data['Q']))
-    NEW_TAU = np.empty((data['K'], data['M'], data['N'], data['Q']))
-
     for m in range(data['M']):
         for k in range(data['K']):
 
@@ -66,12 +64,6 @@ def update_Z(data, prior, hyper, mom, par, remove_self_loops):
                         mom['NU'][m, :],
                         mom['MU'][k, m],
                         remove_self_loops)
-
-            new_tau_km = np.empty((data['N'], data['Q']))
-            for i in range(data['N']):
-                Ti = np.max(NEW_LOG_TAU[k, m, i, :])
-                new_tau_km[i, :] = np.exp(NEW_LOG_TAU[k, m, i, :] - Ti)
-                NEW_TAU[k, m, i, :] = new_tau_km[i, :] / np.sum(new_tau_km[i, :])
 
     return NEW_LOG_TAU
 
