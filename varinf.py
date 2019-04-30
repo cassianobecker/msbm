@@ -113,11 +113,10 @@ def infer(data, prior, hyper, mom, par):
             NU = msbm.update_gamma(data, prior, hyper, mom, par)
             mom['NU'] = NU
 
-            for _ in range(1):
-                LOG_TAU = msbm.update_Z(data, prior, hyper, mom, par)
-                mom['LOG_TAU'] = LOG_TAU
-                mom['TAU'] = msbm.TAU_from_LOG_TAU(mom, par)
-
+            LOG_TAU = msbm.update_Z(data, prior, hyper, mom, par)
+            mom['LOG_TAU'] = LOG_TAU
+            mom['TAU'] = msbm.TAU_from_LOG_TAU(mom, par)
+            
             LOG_MU = msbm.update_Y(data, prior, hyper, mom, par)
             mom['LOG_MU'] = LOG_MU
             mom['MU'] = msbm.par_from_mom_MU(mom, par)

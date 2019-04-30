@@ -77,9 +77,13 @@ def init_MU(data, hyper):
 
     if hyper['init_MU'] == 'random':
         MU = npr.rand(data['K'], hyper['M'])
-    if hyper['init_MU'] == 'uniform':
+    elif hyper['init_MU'] == 'random_sparse':
+        MU = npr.rand(data['K'], hyper['M'])
+        for k in range(data['K']):
+            MU[k, :] = (MU[k, :] == np.max(MU[k, :])) + 0         
+    elif hyper['init_MU'] == 'uniform':
         MU = np.ones((data['K'], hyper['M'])) / hyper['M']
-    if hyper['init_MU'] == 'some_truth' :
+    elif hyper['init_MU'] == 'some_truth' :
         MU = data['Y'].copy()
         inds = npr.choice(data['Y'].shape[0], int(hyper['init_LAMB_MU']*data['Y'].shape[0]), replace=False)   
         MU[inds, :] = 1.0 - MU[inds, :]
