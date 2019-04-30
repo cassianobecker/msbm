@@ -114,8 +114,12 @@ def update_rho(data, prior, hyper, mom, par, remove_self_loops=True):
 
 # ################# COMPUTING THE ELBO #################
 
-def elbo_x(data, prior, hyper, mom, par):
+def elbo_x(data, prior, hyper, mom, par, remove_self_loops=True):
 
+    if remove_self_loops:
+        NON_EDGES = data['NON_X']
+    else:
+        NON_EDGES = 1.0 - data['X']
     # We use one line from update_z
     ALPHA_diff = sp.psi(mom['ALPHA']) - sp.psi(mom['ALPHA'] + mom['BETA'])
     BETA_diff = sp.psi(mom['BETA']) - sp.psi(mom['ALPHA'] + mom['BETA'])
@@ -123,7 +127,7 @@ def elbo_x(data, prior, hyper, mom, par):
     # We use the einsums from update_pi (and add ALPHA_diff, BETA_diff)
     str_sum = 'km,kmiq,kmjr,kij,mqr->'
     P1 = np.einsum(str_sum, mom['MU'], mom['TAU'], mom['TAU'], data['X'], ALPHA_diff)
-    P2 = np.einsum(str_sum, mom['MU'], mom['TAU'], mom['TAU'], 1.0 - data['X'], BETA_diff)
+    P2 = np.einsum(str_sum, mom['MU'], mom['TAU'], mom['TAU'], NON_EDGES, BETA_diff)
 
     lb_x = P1 + P2
 
@@ -205,9 +209,9 @@ def elbo_z(data, prior, hyper, mom, par):
     # We use NU_diff from update_z
     NU_diff = sp.psi(mom['NU']) - sp.psi(np.einsum('ij,k->ik', mom['NU'], np.ones(hyper['Q'])))
 
-    P1 = np.einsum('km,kmiq,mq->', mom['MU'], mom['TAU'], NU_diff)
+    P1 = np.einsum('km,kmiq,mq->', np.ones(mom['MU'].shape), mom['TAU'], NU_diff)
 
-    P2 = np.einsum('km,kmiq->', mom['MU'], sp.xlogy(mom['TAU'], mom['TAU']))
+    P2 = np.einsum('km,kmiq->', np.ones(mom['MU'].shape), sp.xlogy(mom['TAU'], mom['TAU']))
 
     lb_z = P1 - P2
 

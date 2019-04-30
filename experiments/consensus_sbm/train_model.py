@@ -8,6 +8,7 @@ sys.path.insert(0, '../..')
 import util as ut
 import init_msbm_vi as im
 import varinf
+import numpy as np
 
 
 def main():
@@ -31,11 +32,18 @@ def main():
         hyper['Q'] = data['Q']
 
         # initialize moments
+        hyper['init_MU'] = 'some_truth'
+        hyper['init_LAMB_MU'] = 0
+        hyper['init_TAU'] = 'distance_sparse'
+        hyper['init_LAMB_TAU'] = 0
+        hyper['init_others'] = 'uniform'
+
         mom = im.init_moments(data, hyper)
         par = dict()
         par['MAX_ITER'] = 500
         par['TOL_ELBO'] = 1.e-13
         par['ALG'] = 'cavi'
+        par['kappas'] = np.ones(par['MAX_ITER'])
 
         results_mom, elbo_seq = varinf.infer(data, prior, hyper, mom, par)
 

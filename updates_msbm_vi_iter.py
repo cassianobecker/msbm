@@ -9,8 +9,8 @@ import scipy.special as sp
 
 def update_Pi(data, prior, hyper, mom, par, remove_self_loops):
 
-    NEW_ALPHA = np.empty((data['M'], data['Q'], data['Q']))
-    NEW_BETA = np.empty((data['M'], data['Q'], data['Q']))
+    NEW_ALPHA = np.zeros((data['M'], data['Q'], data['Q']))
+    NEW_BETA = np.zeros((data['M'], data['Q'], data['Q']))
 
     for m in range(data['M']):
         for q in range(data['Q']):
@@ -48,7 +48,7 @@ def get_sum_a_b_pi(m, q, r, data, mom, par, prior, remove_self_loops):
 
 def update_Z(data, prior, hyper, mom, par, remove_self_loops):
 
-    NEW_LOG_TAU = np.empty((data['K'], data['M'], data['N'], data['Q']))
+    NEW_LOG_TAU = np.zeros((data['K'], data['M'], data['N'], data['Q']))
     for m in range(data['M']):
         for k in range(data['K']):
 
@@ -74,7 +74,7 @@ def get_log_tau_kmiq(i, q, N, Q, Xk, tau_km, a_m, b_m, nu_m, mu_km, remove_self_
     psnuq = sp.psi(np.sum(nu_m))
     log_tau_kmiq = pnuq - psnuq
 
-    log_tau_km = np.empty((N, Q))
+    log_tau_km = np.zeros((N, Q))
 
     for j in range(N):
         for r in range(Q):
@@ -88,7 +88,7 @@ def get_log_tau_kmiq(i, q, N, Q, Xk, tau_km, a_m, b_m, nu_m, mu_km, remove_self_
                 psi_b_mqr = sp.psi(b_m[q, r])
                 psi_ab_mqr = sp.psi(a_m[q, r] + b_m[q, r])
 
-                log_tau_km[j, r] = tau_kmjr * (x_kij * (psi_a_mqr - psi_b_mqr) + psi_b_mqr - psi_ab_mqr)
+                log_tau_km[j, r] = tau_kmjr * (x_kij * (psi_a_mqr - psi_ab_mqr) + (1-x_kij)*(psi_b_mqr - psi_ab_mqr))
 
     log_tau_kmiq = mu_km * (log_tau_kmiq + np.sum(np.sum(log_tau_km)))
 
@@ -99,8 +99,7 @@ def get_log_tau_kmiq(i, q, N, Q, Xk, tau_km, a_m, b_m, nu_m, mu_km, remove_self_
 
 def update_Y(data, prior, hyper, mom, par, remove_self_loops):
 
-    NEW_LOG_MU = np.empty((data['K'], data['M']))
-    NEW_MU = np.empty((data['K'], data['M']))
+    NEW_LOG_MU = np.zeros((data['K'], data['M']))
 
     for k in range(data['K']):
         for m in range(data['M']):
@@ -113,12 +112,6 @@ def update_Y(data, prior, hyper, mom, par, remove_self_loops):
                                              mom['ZETA'],
                                              mom['NU'][m, :],
                                              remove_self_loops)
-
-    new_mu_km = np.empty((data['K'], data['M']))
-    for k in range(data['K']):
-        Tk = np.max(NEW_LOG_MU[k, :])
-        new_mu_km[k, :] = np.exp(NEW_LOG_MU[k, :] - Tk)
-        NEW_MU[k, :] = new_mu_km[k, :] / np.sum(new_mu_km[k, :])
 
     return NEW_LOG_MU
 
@@ -160,7 +153,7 @@ def get_log_mu_km(m, N, Q, Xk, tau_km, a_m, b_m, zeta, nu_m, remove_self_loops):
 
 def update_gamma(data, prior, hyper, mom, par):
 
-    NEW_NU = np.empty((data['M'], data['Q']))
+    NEW_NU = np.zeros((data['M'], data['Q']))
 
     for m in range(data['M']):
         for q in range(data['Q']):
@@ -178,7 +171,7 @@ def update_gamma(data, prior, hyper, mom, par):
 
 def update_rho(data, prior, hyper, mom, par):
 
-    NEW_ZETA = np.empty((data['M']))
+    NEW_ZETA = np.zeros((data['M']))
 
     for m in range(data['M']):
         NEW_ZETA[m] = prior['ZETA_0'] + np.sum(mom['MU'][:, m])

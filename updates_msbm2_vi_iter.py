@@ -4,6 +4,7 @@ Functions for updating the variational parameters for the variational inference
 import numpy as np
 import scipy.special as sp
 import updates_msbm_vi_iter as ul
+import pdb
 # ################ UPDATE FUNCTIONS #########################
 
 
@@ -18,15 +19,13 @@ def update_Pi(data, prior, hyper, mom, par, remove_self_loops):
 
 def update_Z(data, prior, hyper, mom, par, remove_self_loops):
 
-    NEW_LOG_TAU = np.empty((data['K'], data['M'], data['N'], data['Q']))
-    NEW_TAU = np.empty((data['K'], data['M'], data['N'], data['Q']))
+    NEW_LOG_TAU = np.zeros((data['K'], data['M'], data['N'], data['Q']))
 
     for m in range(data['M']):
         for k in range(data['K']):
 
             for i in range(data['N']):
                 for q in range(data['Q']):
-
                     NEW_LOG_TAU[k, m, i, q] = get_log_tau_kmiq(
                         i, q,
                         data['N'], data['Q'], data['X'][k, :, :],
@@ -37,18 +36,13 @@ def update_Z(data, prior, hyper, mom, par, remove_self_loops):
                         mom['MU'][k, m],
                         remove_self_loops)
 
-            new_tau_km = np.empty((data['N'], data['Q']))
-            for i in range(data['N']):
-                Ti = np.max(NEW_LOG_TAU[k, m, i, :])
-                new_tau_km[i, :] = np.exp(NEW_LOG_TAU[k, m, i, :] - Ti)
-                NEW_TAU[k, m, i, :] = new_tau_km[i, :] / np.sum(new_tau_km[i, :])
-
     return NEW_LOG_TAU
 
 
 def get_log_tau_kmiq(i, q, N, Q, Xk, tau_km, a_m, b_m, nu_m, mu_km, remove_self_loops):
 
-    log_tau_km = np.empty((N, Q))
+    log_tau_km_x = np.zeros((N, Q))
+    log_tau_km_non_x = np.zeros((N, Q))
 
     for j in range(N):
         for r in range(Q):
@@ -62,12 +56,13 @@ def get_log_tau_kmiq(i, q, N, Q, Xk, tau_km, a_m, b_m, nu_m, mu_km, remove_self_
                 psi_b_mqr = sp.psi(b_m[q, r])
                 psi_ab_mqr = sp.psi(a_m[q, r] + b_m[q, r])
 
-                log_tau_km[j, r] = tau_kmjr * (x_kij * (psi_a_mqr - psi_b_mqr) + psi_b_mqr - psi_ab_mqr)
+                log_tau_km_x[j, r] = tau_kmjr * (x_kij * (psi_a_mqr - psi_ab_mqr))
+                log_tau_km_non_x[j, r] = tau_kmjr * ((1-x_kij)*(psi_b_mqr - psi_ab_mqr))
 
     pnuq = sp.psi(nu_m[q])
     psnuq = sp.psi(np.sum(nu_m))
 
-    log_tau_kmiq = pnuq - psnuq + mu_km*np.sum(np.sum(log_tau_km))
+    log_tau_kmiq = pnuq - psnuq + mu_km*(np.sum(np.sum(log_tau_km_x)) + np.sum(np.sum(log_tau_km_non_x)))
 
     return log_tau_kmiq
 
@@ -76,8 +71,7 @@ def get_log_tau_kmiq(i, q, N, Q, Xk, tau_km, a_m, b_m, nu_m, mu_km, remove_self_
 
 def update_Y(data, prior, hyper, mom, par, remove_self_loops):
 
-    NEW_LOG_MU = np.empty((data['K'], data['M']))
-    NEW_MU = np.empty((data['K'], data['M']))
+    NEW_LOG_MU = np.zeros((data['K'], data['M']))
 
     for k in range(data['K']):
         for m in range(data['M']):
@@ -90,12 +84,6 @@ def update_Y(data, prior, hyper, mom, par, remove_self_loops):
                                              mom['ZETA'],
                                              mom['NU'][m, :],
                                              remove_self_loops)
-
-    new_mu_km = np.empty((data['K'], data['M']))
-    for k in range(data['K']):
-        Tk = np.max(NEW_LOG_MU[k, :])
-        new_mu_km[k, :] = np.exp(NEW_LOG_MU[k, :] - Tk)
-        NEW_MU[k, :] = new_mu_km[k, :] / np.sum(new_mu_km[k, :])
 
     return NEW_LOG_MU
 

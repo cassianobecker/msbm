@@ -132,10 +132,12 @@ class TestUpdates:
 
     def eval_diff(self, X1, X2):
 
+        ind = np.unravel_index(np.argmax(X1 - X2), X1.shape)
         diff = (X1 - X2).ravel()
         print('Mean abs entry-wise error: {:1.3e}'.format(np.mean(np.abs(diff))))
         print('Max abs entry-wise error:  {:1.3e}'.format(np.max(np.abs(diff))))
-        print('')
+        print('On entry with index:')
+        print(ind)
 
 # ###########################################################
 # ###########################################################

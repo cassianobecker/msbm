@@ -18,8 +18,6 @@ def main():
     plt.title(r"Consensus Mixture of SBM Performance",  fontsize=16)
     plt.grid(True)
 
-    plt.show()
-
     plot_file = os.path.join('plots', 'plot_' + 'consensus.svg')
     plt.savefig(plot_file, format="svg")
     sys.exit()
