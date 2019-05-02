@@ -4,7 +4,7 @@ import pickle
 sys.path.insert(0, '../..')
 import util as ut
 import init_msbm_vi as im
-import varinf2 as varinf
+import varinf1 as varinf
 import numpy as np
 import pdb
 
@@ -40,7 +40,7 @@ def main():
     #- SBM Tau *
     #- Spectral Tau
 
-    #WITH VARINF2
+    #WITH VARINF1
     for numb in range(30):
         print("----------------------------------")
         print("Initialization: SBM Tau, Rand Mu")

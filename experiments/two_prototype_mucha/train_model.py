@@ -29,7 +29,7 @@ def main():
         par = dict()
         par['MAX_ITER'] = 1000
         par['kappas'] = np.ones(par['MAX_ITER'])
-        par['TOL_ELBO'] = 1.e-13
+        par['TOL_ELBO'] = 1.e-12
         par['ALG'] = 'cavi'
 
         hyper['M'] = data['M']
@@ -39,21 +39,34 @@ def main():
         hyper['init_MU'] = 'spectral'
         hyper['init_others'] = 'random'
 
-        # Varinf1, Unshuffle, Sparse
+        # #####
+        # # Varinf1, Unshuffle, Sparse
+        # #####
         print("----------------------------------")
         print("Training MSBM for dataset: {}".format(numb))
-        mom = im.init_moments(data, hyper, seed= numb, sparse = False, unshuffle = True)
+        mom = im.init_moments(data, hyper, seed= numb, sparse = True, unshuffle = True)
         results_mom, elbo_seq = varinf.infer(data, prior, hyper, mom, par)
 
-        outfile = 'msbm_{:02}.pickle'.format(numb)
+        outfile = 'msbm_{:02}.pickle'.format(numb-1)
         print('Saving file to {:s} ... '.format('models/' + outfile))
         out_file_url = os.path.join('models', outfile)
         pickle.dump({'results_mom': results_mom, 'elbo_seq': elbo_seq}, open(out_file_url, 'wb'))
 
+        ####
         #Just Spectral
+        ####
         hyper['init_TAU'] = 'random'
         hyper['init_MU'] = 'spectral'
         hyper['init_others'] = 'random'
+
+        mom = im.init_moments(data, hyper, seed= numb, sparse = True, unshuffle = True)
+        elbo_seq = []
+
+        outfile = 'spectral_{:02}.pickle'.format(numb-1)
+        print('Saving file to {:s} ... '.format('models/' + outfile))
+        out_file_url = os.path.join('models', outfile)
+        pickle.dump({'results_mom': mom, 'elbo_seq': elbo_seq}, open(out_file_url, 'wb'))
+
 
 if __name__ == '__main__':
     main()

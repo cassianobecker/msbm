@@ -7,6 +7,7 @@ import numpy.random as npr
 import sys
 import pickle
 import time
+import itertools
 import pdb
 from random import randint
 import scipy as sp
@@ -128,6 +129,28 @@ def getSNR(gamma, pi):
                     com_j = j
     return snr, com_i, com_j
 
+def get_CH_dist(gamma_0, pi_0, gamma_1, pi_1, n):
+    
+    PQ_0 =  np.matmul(np.diag(gamma_0),pi_0 * (n / np.log(n)))
+    PQ_1 =  np.matmul(np.diag(gamma_1),pi_1 * (n / np.log(n)))
+
+    CH_dist = 0
+    for i in range(PQ_0.shape[1]):
+        prof_i = PQ_0[:,i]
+        div_i = 500
+        #we compare against all profiles of the second network and pick the smallest divergence
+        permutations = list(itertools.permutations( np.arange(PQ_1.shape[1]) ))
+        for j in range(PQ_1.shape[1]):
+            for k in range(len(permutations)):
+                perm = np.array(permutations[k])
+                prof_j = PQ_1[:,j][perm]
+                new_snr = CHDiv(prof_i, prof_j)
+                if new_snr <= div_i:
+                    div_i = new_snr
+        if div_i >= CH_dist:
+            CH_dist = div_i
+
+    return CH_dist
 
 def CHDiv(theta_i, theta_j):
     """

@@ -23,8 +23,8 @@ def main():
 
     model_list_v2_nu_sp = sorted([e for e in model_list if e.startswith('v2_nu_sp_')])
     model_list_v2_u_sp = sorted([e for e in model_list if e.startswith('v2_u_sp_')])
-    model_list_v1_u_sp_ = sorted([e for e in model_list if e.startswith('v1_u_sp_')])
-    model_list_v1_u_nsp_ = sorted([e for e in model_list if e.startswith('v1_u_nsp_')])
+    model_list_v1_u_sp = sorted([e for e in model_list if e.startswith('v1_u_sp_')])
+    model_list_v1_u_nsp = sorted([e for e in model_list if e.startswith('v1_u_nsp_')])
     model_list_v2_u_nsp = sorted([e for e in model_list if e.startswith('v2_u_nsp_')])
 
     yrand_v2_nu_sp_= []
@@ -42,31 +42,31 @@ def main():
         model_url = os.path.join('models', model_file)
         results_mom, elbo_seq = ut.load_results(model_url)
         # y_rand
-        yrand_v2_nu_sp.append(ut.adj_rand(results_mom['MU'], data['Y']))
+        yrand_v2_nu_sp_.append(ut.adj_rand(results_mom['MU'], data['Y']))
 
         model_file = model_list_v2_u_sp[i]
         model_url = os.path.join('models', model_file)
         results_mom, elbo_seq = ut.load_results(model_url)
         # y_rand
-        yrand_v2_u_sp.append(ut.adj_rand(results_mom['MU'], data['Y']))
+        yrand_v2_u_sp_.append(ut.adj_rand(results_mom['MU'], data['Y']))
 
         model_file = model_list_v1_u_sp[i]
         model_url = os.path.join('models', model_file)
         results_mom, elbo_seq = ut.load_results(model_url)
         # y_rand
-        yrand_v1_u_sp.append(ut.adj_rand(results_mom['MU'], data['Y']))
+        yrand_v1_u_sp_.append(ut.adj_rand(results_mom['MU'], data['Y']))
 
         model_file = model_list_v1_u_nsp[i]
         model_url = os.path.join('models', model_file)
         results_mom, elbo_seq = ut.load_results(model_url)
         # y_rand
-        yrand_v1_u_nsp.append(ut.adj_rand(results_mom['MU'], data['Y']))
+        yrand_v1_u_nsp_.append(ut.adj_rand(results_mom['MU'], data['Y']))
 
         model_file = model_list_v2_u_nsp[i]
         model_url = os.path.join('models', model_file)
         results_mom, elbo_seq = ut.load_results(model_url)
         # y_rand
-        yrand_v2_u_nsp.append(ut.adj_rand(results_mom['MU'], data['Y']))
+        yrand_v2_u_nsp_.append(ut.adj_rand(results_mom['MU'], data['Y']))
 
     stats_url = os.path.join('stats','stats_hard_inits.pickle')    
     print('Saving file to {:s} ... '.format(stats_url))
