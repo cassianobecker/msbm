@@ -8,7 +8,7 @@ import numpy as np
 sys.path.insert(0, '../..')
 import util as ut
 import init_msbm_vi as im
-import varinf
+import varinf as varinf
 
 
 def main():
@@ -31,18 +31,28 @@ def main():
 
         # assigning hyper-parameters from ground truth (cheating)
         hyper = dict()
+        par = dict()
         hyper['M'] = data['M']
         hyper['Q'] = data['Q']
 
-        # initialize moments
-        mom = im.init_moments(data, hyper)
-
-        par = dict()
         par['MAX_ITER'] = 1000
-        par['TOL_ELBO'] = 1.e-12
+        par['TOL_ELBO'] = 1.e-13
         par['ALG'] = 'cavi'
-
-        results_mom, elbo_seq = varinf.infer(data, prior, hyper, mom, par)
+        par['kappas'] = np.ones(par['MAX_ITER'])
+        
+        #Best of 4
+        candidate_moms = []
+        candidate_elbos = []
+        candidate_score = []
+        for r in range(4):
+            mom = im.init_moments(data, hyper, seed= r)
+            results_mom, elbo_seq = varinf.infer(data, prior, hyper, mom, par)
+            candidate_moms.append(results_mom)
+            candidate_elbos.append(elbo_seq)
+            candidate_score.append(elbo_seq['all'][-1])
+        
+        results_mom = candidate_moms[np.argmax(candidate_score)]
+        elbo_seq = candidate_elbos[np.argmax(candidate_score)]
 
         print('Saving file to {:s} ... '.format('models/model_' + data_file))
         out_file_url = os.path.join('models', 'model_' + data_file)

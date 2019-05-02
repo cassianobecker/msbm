@@ -225,9 +225,9 @@ def get_gamma_pi(
 
     #Find alpha and beta parameters for beta prior of Pi matrix
     if SNR is None:
-        alpha_ii, beta_ii, alpha_ij, beta_ij = get_beta_moms(c, n, Q, SNR = 1.05 + 0.55, scale = 0.5)
+        alpha_ii, beta_ii, alpha_ij, beta_ij = get_beta_moms(c, n, Q, SNR = 1.05 + 0.35, scale = 0.5)
     else:
-        alpha_ii, beta_ii, alpha_ij, beta_ij = get_beta_moms(c, n, Q, SNR + 0.55, scale = 0.5)
+        alpha_ii, beta_ii, alpha_ij, beta_ij = get_beta_moms(c, n, Q, SNR + 0.35, scale = 0.5)
 
     ALPHA_0 = np.ones((Q, Q))*alpha_ij + np.diag( np.repeat(alpha_ii - alpha_ij,Q))
     BETA_0 = np.ones((Q,Q))*beta_ij + np.diag( np.repeat(beta_ii - beta_ij,Q))

@@ -2,7 +2,10 @@ import sklearn.metrics as skm
 import pickle
 import random 
 import pdb
+import networkx as nx
 import numpy as np
+from bisect import *
+import scipy.sparse as sps
 from scipy.special import entr
 
 # ################# PERSISTENCE FUNCTIONS ##############
@@ -63,6 +66,67 @@ def get_entropy_Y(mom):
     entro = [np.sum(entr(mom['MU'][k, :])) for k in range(mom['MU'].shape[0])]
 
     return entro
+
+def get_NBT(X):
+
+    #We get a list of the directed edges
+    if sps.issparse(X):
+        G = nx.from_scipy_sparse_matrix(X)
+    else:
+        G = nx.from_numpy_matrix(X)
+
+    G = G.to_directed()
+    dedges = G.edges()
+    n = X.shape[0]
+    m = len(dedges)
+
+    #Some objects for efficient lookup
+    dedges_src = [d[0] for d in dedges]
+    dedges_trg = [d[1] for d in dedges]
+    cutoffs_src = [bisect_left(dedges_src, x) for x in range(n)]
+    cutoffs_src = np.append(cutoffs_src, m)
+
+    NBT = nx.empty_graph(m).to_directed()    
+    for i in range(m):        
+        #Look-up the indices of dedges starting with i_trg and not ending in i
+        i_src = dedges[i][0]
+        i_trg = dedges[i][1]
+        j_list = [j for j in range(cutoffs_src[i_trg], cutoffs_src[i_trg+1]) if dedges_trg[j] != i]
+        for j in j_list:
+            NBT.add_edge(i, j)
+
+    return nx.to_scipy_sparse_matrix(NBT).asfptype(), dedges
+
+
+def get_spectral_moms(X, orders):
+    
+    if not isinstance(orders, list):
+        orders = [orders]
+    spectral_moms = np.ones((X.shape[0], np.max(orders)+1))
+
+    for k in range(X.shape[0]):
+        A = np.identity(X.shape[1])
+        for p in range(np.max(orders) + 1):
+            if p > 0:
+                A = np.matmul(A, X[k,:,:])
+            spectral_moms[k, p] = np.trace(A)
+
+    return (1/X.shape[1])*spectral_moms[:, orders]
+
+def get_Y_distances( sp_moms, c = None):
+    net = np.zeros( (sp_moms.shape[0], sp_moms.shape[0]))
+    #we standardize the attributes to take distances
+    for p in range(sp_moms.shape[1]):
+        sp_moms[:,p] = (sp_moms[:,p] - np.mean(sp_moms[:,p]))/np.std(sp_moms[:,p])
+
+    #populate the matrix 
+    for i in range(net.shape[0]):
+        for j in range(i+1, net.shape[0]):
+            net[i,j] = np.sum((sp_moms[i,:] - sp_moms[j,:])**2)
+
+    net = net + np.transpose(net)
+
+    return net
 
 def peek_mom_TAU(mom, seed = None):
     """

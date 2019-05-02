@@ -1,6 +1,6 @@
 import pdb
-import updates_msbm_vi as msbm
-#import updates_msbm2_vi as msbm
+#import updates_msbm_vi as msbm
+import updates_msbm2_vi as msbm
 from util import *
 
 # ################### MAIN INFERENCE PROGRAM #####################
@@ -42,9 +42,9 @@ def check_stopping(t, par, elbos):
         stop = True
         reason = 'STOPPED (ELBO tolerance {:1.4e} achieved).'.format(par['TOL_ELBO'])
 
-    if sum(np.diff(elbos['all'])<0) > 9:
+    if sum(np.diff(elbos['all'])<0) > 14:
         stop = True
-        reason = 'STOPPED (ELBO oscillated 10 times)'
+        reason = 'STOPPED (ELBO oscillated 15 times)'
 
     if t == par['MAX_ITER'] - 1:
         stop = True
@@ -80,11 +80,12 @@ def print_status(t, data, mom, par, elbos):
                 t + 1, par['MAX_ITER'], par['kappa'], elbos['all'][-1]))
 
 
-def infer(data, prior, hyper, mom, par):
+def infer(data, prior, hyper, mom, par, verbose = True):
     #ADD NON_X to the Data (non edges without self loops)
     par = get_default_parameters(par)
 
-    print_header(data, hyper, par)
+    if verbose:
+        print_header(data, hyper, par)
 
     elbos = dict()
 
@@ -94,12 +95,14 @@ def infer(data, prior, hyper, mom, par):
 
         elbos = msbm.compute_elbos(data, prior, hyper, mom, par, elbos)
 
-        print_status(t, data, mom, par, elbos)
+        if verbose:
+            print_status(t, data, mom, par, elbos)
 
         stop, reason = check_stopping(t, par, elbos)
 
         if stop:
-            print(reason)
+            if verbose:
+                print(reason)
             return mom, elbos
 
         # ####################### CAVI IMPLEMENTATION ########################
@@ -110,12 +113,12 @@ def infer(data, prior, hyper, mom, par):
             mom['ALPHA'] = ALPHA
             mom['BETA'] = BETA
 
-            NU = msbm.update_gamma(data, prior, hyper, mom, par)
-            mom['NU'] = NU
-
             LOG_TAU = msbm.update_Z(data, prior, hyper, mom, par)
             mom['LOG_TAU'] = LOG_TAU
             mom['TAU'] = msbm.TAU_from_LOG_TAU(mom, par)
+
+            NU = msbm.update_gamma(data, prior, hyper, mom, par)
+            mom['NU'] = NU
             
             LOG_MU = msbm.update_Y(data, prior, hyper, mom, par)
             mom['LOG_MU'] = LOG_MU

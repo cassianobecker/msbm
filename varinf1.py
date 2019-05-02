@@ -1,6 +1,6 @@
 import pdb
-import updates_msbm_vi as msbm
-#import updates_msbm2_vi as msbm
+#import updates_msbm_vi as msbm
+import updates_msbm2_vi as msbm
 from util import *
 
 # ################### MAIN INFERENCE PROGRAM #####################
@@ -42,9 +42,9 @@ def check_stopping(t, par, elbos):
         stop = True
         reason = 'STOPPED (ELBO tolerance {:1.4e} achieved).'.format(par['TOL_ELBO'])
 
-    if sum(np.diff(elbos['all'])<0) > 9:
+    if sum(np.diff(elbos['all'])<0) > 12:
         stop = True
-        reason = 'STOPPED (ELBO oscillated 10 times)'
+        reason = 'STOPPED (ELBO oscillated 13 times)'
 
     if t == par['MAX_ITER'] - 1:
         stop = True
@@ -80,11 +80,12 @@ def print_status(t, data, mom, par, elbos):
                 t + 1, par['MAX_ITER'], par['kappa'], elbos['all'][-1]))
 
 
-def infer(data, prior, hyper, mom, par):
+def infer(data, prior, hyper, mom, par, verbose = True):
     #ADD NON_X to the Data (non edges without self loops)
     par = get_default_parameters(par)
 
-    print_header(data, hyper, par)
+    if verbose:
+        print_header(data, hyper, par)
 
     elbos = dict()
     elbos_in = dict()
@@ -98,19 +99,20 @@ def infer(data, prior, hyper, mom, par):
         if t > 0:
             inner_t = len(elbos_in['all']) #Actual non-tau iterations
 
-        print_status(t, data, mom, par, elbos)
+        if verbose:
+            print_status(t, data, mom, par, elbos)
 
         stop, reason = check_stopping(t, par, elbos)
 
         if stop:
-            print(reason)
+            if verbose:
+                print(reason)
             return mom, elbos
 
         # ####################### CAVI IMPLEMENTATION ########################
 
         if par['ALG'] == 'cavi':
             stop_in = False
-
             while not stop_in:
                 ALPHA, BETA = msbm.update_Pi(data, prior, hyper, mom, par)
                 mom['ALPHA'] = ALPHA
@@ -127,7 +129,7 @@ def infer(data, prior, hyper, mom, par):
                 mom['ZETA'] = ZETA
 
                 elbos_in = msbm.compute_elbos(data, prior, hyper, mom, par, elbos_in)
-                stop_in, _ = stop, check_stopping(t, par, elbos_in)
+                stop_in, _ = check_stopping(t, par, elbos_in)
 
             LOG_TAU = msbm.update_Z(data, prior, hyper, mom, par)
             mom['LOG_TAU'] = LOG_TAU

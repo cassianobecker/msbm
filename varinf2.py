@@ -1,6 +1,6 @@
 import pdb
-import updates_msbm_vi as msbm
-#import updates_msbm2_vi as msbm
+#import updates_msbm_vi as msbm
+import updates_msbm2_vi as msbm
 from util import *
 
 # ################### MAIN INFERENCE PROGRAM #####################
@@ -80,11 +80,12 @@ def print_status(t, data, mom, par, elbos):
                 t + 1, par['MAX_ITER'], par['kappa'], elbos['all'][-1]))
 
 
-def infer(data, prior, hyper, mom, par):
+def infer(data, prior, hyper, mom, par, verbose = True):
     #ADD NON_X to the Data (non edges without self loops)
     par = get_default_parameters(par)
 
-    print_header(data, hyper, par)
+    if verbose:
+        print_header(data, hyper, par)
 
     elbos = dict()
 
@@ -94,18 +95,19 @@ def infer(data, prior, hyper, mom, par):
 
         elbos = msbm.compute_elbos(data, prior, hyper, mom, par, elbos)
 
-        print_status(t, data, mom, par, elbos)
+        if verbose:
+            print_status(t, data, mom, par, elbos)
 
         stop, reason = check_stopping(t, par, elbos)
 
         if stop:
-            print(reason)
+            if verbose:
+                print(reason)
             return mom, elbos
 
         # ####################### CAVI IMPLEMENTATION ########################
 
         if par['ALG'] == 'cavi':
-
             ALPHA, BETA = msbm.update_Pi(data, prior, hyper, mom, par)
             mom['ALPHA'] = ALPHA
             mom['BETA'] = BETA

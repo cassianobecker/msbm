@@ -4,7 +4,7 @@ import pickle
 sys.path.insert(0, '../..')
 import util as ut
 import init_msbm_vi as im
-import varinf2 as varinf
+import varinf1 as varinf
 import numpy as np
 import pdb
 

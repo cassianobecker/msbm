@@ -13,7 +13,6 @@ from scipy.stats import dirichlet
 def update_Pi(data, prior, hyper, mom, par, remove_self_loops=True):
 
     str_sum = 'km, kij, kmiq, kmjr -> mqr'
-
     NEW_ALPHA = par['kappa']*(prior['ALPHA_0']
                               + np.einsum(str_sum, mom['MU'], data['X'],
                                           mom['TAU'], mom['TAU']) - 1.0) + 1.0
