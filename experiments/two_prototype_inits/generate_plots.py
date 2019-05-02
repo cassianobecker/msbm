@@ -25,7 +25,7 @@ def main():
 
     data = [data1, data2, data3, data4, data5, data6]
     plt.boxplot(data)
-    plt.xticks(range(1,7),['sbm;rand', 'sbm;dist', 'sbm;spec', 'dist;spec', 'spectral;spec', 'dist;dist'], fontsize=7)
+    plt.xticks(range(1,7),['sbm;rand', 'sbm;dist', 'sbm;spec', 'dist;spec', 'spec;spec', 'dist;dist'], fontsize=7)
     plt.xlabel('Initialization method')
     plt.ylabel('Adj. Rand Index of Y')
     plt.title("Rand Index for different Inits.\n(50 draws each)", fontsize= 16)
@@ -46,7 +46,7 @@ def main():
 
     data = [data1, data2, data3, data4, data5, data6]
     plt.boxplot(data)
-    plt.xticks(range(1,7),['sbm;rand', 'sbm;dist', 'sbm;spec', 'dist;spec', 'spectral;spec', 'dist;dist'], fontsize=7)
+    plt.xticks(range(1,7),['sbm;rand', 'sbm;dist', 'sbm;spec', 'dist;spec', 'spec;spec', 'dist;dist'], fontsize=7)
     plt.xlabel('Initialization method')
     plt.ylabel('Final Elbo for MSBM')
     plt.title("Effect of Initialization on ELBO\n(50 draws each)", fontsize= 16)

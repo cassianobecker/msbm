@@ -1,0 +1,4 @@
+unshuffle: NO
+varinf: varinf2
+sparse: YES
+spectral_y: binary + non-backtracking

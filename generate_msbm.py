@@ -182,7 +182,7 @@ def accept_prob(e, eprime, T):
 # asymptotic detectability. For the constrained sampling we use simulated annealing.
 
 def get_gamma_pi(
-        c, vdir=0.015,
+        c, vdir=0.025,
         Q=4, sampling='constrained', SNR=None,
         maxIter=100, tol=1e-08, n=100, verbose=False):
     """

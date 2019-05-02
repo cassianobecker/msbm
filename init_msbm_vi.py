@@ -7,7 +7,7 @@ from sklearn.cluster import KMeans
 import varinf2 as varinf
 from util import *
 
-def init_moments(data, hyper, seed = None, sparse = True, unshuffle = False):
+def init_moments(data, hyper, seed = None, sparse = False, unshuffle = True):
 
     mom = dict()
     npr.seed(seed)

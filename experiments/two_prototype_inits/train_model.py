@@ -25,7 +25,7 @@ def main():
     par = dict()
     par['MAX_ITER'] = 1000
     par['kappas'] = np.ones(par['MAX_ITER'])
-    par['TOL_ELBO'] = 1.e-13
+    par['TOL_ELBO'] = 1.e-11
     par['ALG'] = 'cavi'
 
     hyper['M'] = data['M']
@@ -41,7 +41,7 @@ def main():
     #- Spectral Tau
 
     #WITH VARINF2
-    for numb in range(5):
+    for numb in range(30):
         print("----------------------------------")
         print("Initialization: SBM Tau, Rand Mu")
 

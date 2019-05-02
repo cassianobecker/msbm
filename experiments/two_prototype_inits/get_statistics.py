@@ -125,7 +125,7 @@ def main():
         'yrand_dist_spectral': yrand_dist_spectral,
         'elbo_dist_spectral': elbo_dist_spectral,
         'yrand_spectral_spectral': yrand_spectral_spectral,
-        'elbo_spectral_spectral': elbo_spectrals_spectral,
+        'elbo_spectral_spectral': elbo_spectral_spectral,
         'yrand_dist_dist': yrand_dist_dist,
         'elbo_dist_dist': elbo_dist_dist,
         'final_pi': final_pi,
