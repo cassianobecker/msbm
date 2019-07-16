@@ -5,6 +5,7 @@ import pdb
 import networkx as nx
 import numpy as np
 from bisect import *
+import heapq as hp
 import scipy.sparse as sps
 from scipy.special import entr
 
@@ -66,6 +67,12 @@ def get_entropy_Y(mom):
     entro = [np.sum(entr(mom['MU'][k, :])) for k in range(mom['MU'].shape[0])]
 
     return entro
+
+def get_laplacian(A):
+    D = np.sum(A, axis=0)
+    L = np.diag(D**(-1/2))@A@np.diag(D**(-1/2))
+    return L
+
 
 def get_NBT(X):
 

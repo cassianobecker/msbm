@@ -5,6 +5,7 @@ import networkx as nx
 from scipy.sparse.linalg import eigs
 from sklearn.cluster import KMeans
 import varinf2 as varinf
+import heapq as hp
 from util import *
 
 def init_moments(data, hyper, seed = None, sparse = True, unshuffle = True):
@@ -33,6 +34,8 @@ def init_moments(data, hyper, seed = None, sparse = True, unshuffle = True):
         hyper['init_TAU'] = 'spectral'
     mom['TAU'] = init_TAU(data, hyper, seed)
     if unshuffle:
+        #The guessed community memberships need to sort of match, where all the "large communities" are considered as coming
+        #from the same entry of the Pi matrix of interconnection probabilities which is guessed later from the TAU.
         mom['TAU'] = unshuffle_TAU(data, hyper, mom['TAU'])
     mom['LOG_TAU'] = np.log(mom['TAU'])
     if sparse:
@@ -136,58 +139,74 @@ def init_MU_distance(data, hyper):
       
     return MU
 
-def init_MU_spectral2(data, hyper, seed):
-    #Compute moments
-    MU = np.zeros((data['K'], hyper['M']))
-    sp_moms = get_spectral_moms(data['X'], orders = [2, 4, 6, 8])
-    #Find unweighted distance matrix
-    A = get_Y_distances( sp_moms )
-    #We turn into an affinity matrix
-    A = np.exp( - A/np.mean(np.max(A)) )
-    A = A - np.diag(np.diag(A))
-    #We compute the normalized Laplacian
-    D = np.sum(A, axis=0)
-    L = np.diag(D) - A
-    L = np.diag(D**(-1/2))@L@np.diag(D**(-1/2));
-    #Get first M eigenvectors
-    _, vecs = eigs(L, k= hyper['M'], which = 'SM')
-    sp_emb = np.real(vecs[:, np.arange(1,hyper['M'])])
-
-    #Perform k-means++
-    kmeans = KMeans(n_clusters= hyper['M'], random_state= seed).fit(sp_emb)
-    coms = kmeans.labels_
-    for k in range(data['K']):
-        com = coms[k]
-        MU[k, com] += 1
-
-    return MU
-
 def init_MU_spectral(data, hyper, seed):
     #Compute moments
     MU = np.ones((data['K'], hyper['M']))/(10**12)
-    sp_moms = get_spectral_moms(data['X'], orders = [2, 3, 4, 5, 6])
+    if 'orders' not in hyper.keys():
+        sp_moms = get_spectral_moms(data['X'], orders = [2, 4, 6, 8])
+    else:
+        sp_moms = get_spectral_moms(data['X'], hyper['orders'] )
     #Find unweighted distance matrix
     A = get_Y_distances( sp_moms )
-    #We turn into a binary affinity matrix
-    A = A + 2*np.diag(np.repeat(np.max(np.max(A)), data['K']) )
-    thresh = np.quantile( A.ravel(), 40/(2*data['N']) )
-    A = (A <= thresh) + 0
-    #We use the Non-backtracking operator for clustering
-    NBT, dedges = get_NBT(A)
-
-    #Get first M eigenvectors
-    _, vecs = eigs(NBT, k= hyper['M'], which = 'LM')
-    sp_emb = np.real(vecs[:, np.arange(1,hyper['M'])])
-    #Perform k-means++
-    kmeans = KMeans(n_clusters= hyper['M'], random_state= seed).fit(sp_emb)
-    dedge_coms = kmeans.labels_
-    points = [d[1] for d in dedges]
-
-    for d in range(len(dedges)):
-        com = dedge_coms[d]
-        p = points[d]
-        MU[p, com] += 1
-
+    #We turn into a binary affinity matrix by thresholding the entries
+    if 'MU_spec_method' not in hyper.keys():
+        sys.exit("Spectral moment clustering needs to be specified. Either 'lap' or 'components' are available options.")
+    if hyper['MU_spec_method'] == 'lap':  #We use the normalized laplacian for clustering}
+        #We turn into an affinity matrix
+        A = np.exp( - A/(2*np.mean(np.mean(A))))
+        A = A - np.diag(np.diag(A)) 
+        L = get_laplacian(A)
+        #Get first M eigenvectors
+        _, vecs = eigs(L, k= hyper['M'], which = 'LM')
+        sp_emb = np.real(vecs[:, np.arange(0,hyper['M']-1)]) #Consider only their real parts
+        #We normalize the rows to norm 1, this seems to be a good idea according to Andrew Ng. 2002
+        l2_norms = np.sqrt((sp_emb * sp_emb).sum(axis=1)).reshape(data['K'], 1)
+        sp_emb = sp_emb/l2_norms
+        #Perform k-means++
+        kmeans = KMeans(n_clusters= hyper['M'], random_state= seed, n_init = 25).fit(sp_emb)
+        coms = kmeans.labels_
+        
+        for k in range(data['K']):
+            com = coms[k]
+            MU[k, com] = 1
+    if hyper['MU_spec_method'] == 'components':
+        G = nx.empty_graph(data['K'])
+        #Form a min heap with the edges and the distances
+        h = [] #We now populate the heap
+        for i in range(A.shape[0]):
+            for j in range(i+1, A.shape[0])
+                hp.heappush(h, ( A[i, j],(i, j)))
+        for i in range(A.shape[0]- hyper['M'] + 1):
+            edge = hp.heappop(h)[1]
+            G.add_edge(edge[0], edge[1])        
+        comp_sizes = [len(c) for c in sorted(nx.connected_components(G), key=len, reverse=True)]
+        ncomps = sum(comp_sizes > 1)        
+        #Now we add elements to the heap until we have only M connected components
+        while ncomps > hyper['M'] :
+            edge = hp.heappop(h)[1]
+            G.add_edge(edge[0], edge[1])
+            #get connected components and their sizes
+            comp_sizes = [len(c) for c in sorted(nx.connected_components(G), key=len, reverse=True)]
+            ncomps = sum(comp_sizes > 1)
+        #Next we attach the outlying nodes to their closest component
+        allowed = []
+        for c in sorted(nx.connected_components(G), key=len, reverse=True):
+            if len(c)>1:
+                #populate list of allowed nodes to attach to
+                allowed.extend(list(c))
+            elif len(c) == 1:
+                #add the edge to the closest node in the list of allowed nodes
+                i = list(c)[0]
+                j = allowed[np.argmin(A[i, allowed])]
+                G.add_edge(i, j)
+        #Populate MU
+        comps = sorted(nx.connected_components(G))
+        if len(comps) != hyper['M']:
+            sys.exit("Number of obtained components {:d} different than expected {:d}".format(len(comps), hyper['M']))
+        #print the components for the user to see
+        print(comps)
+        for k in range(data['K']):
+            MU[k, :] = np.array([k in c for c in comps])
     return MU
 
 def init_TAU_distance(data, hyper):
