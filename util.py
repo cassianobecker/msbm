@@ -120,7 +120,7 @@ def get_spectral_moms(X, orders):
 
     return (1/X.shape[1])*spectral_moms[:, orders]
 
-def get_Y_distances( sp_moms, c = None):
+def get_Y_distances( sp_moms ):
     net = np.zeros( (sp_moms.shape[0], sp_moms.shape[0]))
     #we standardize the attributes to take distances
     for p in range(sp_moms.shape[1]):
@@ -132,7 +132,6 @@ def get_Y_distances( sp_moms, c = None):
             net[i,j] = np.sum((sp_moms[i,:] - sp_moms[j,:])**2)
 
     net = net + np.transpose(net)
-
     return net
 
 def peek_mom_TAU(mom, seed = None):

@@ -7,6 +7,7 @@ from sklearn.cluster import KMeans
 import varinf2 as varinf
 import heapq as hp
 from util import *
+from scipy.stats import wasserstein_distance
 
 def init_moments(data, hyper, seed = None, sparse = True, unshuffle = True):
 
@@ -139,9 +140,43 @@ def init_MU_distance(data, hyper):
       
     return MU
 
-def init_MU_spectral(data, hyper, seed):
-    #Compute moments
+def init_MU_wass(data, hyper):
     MU = np.ones((data['K'], hyper['M']))/(10**12)
+    #Obtain the spectrum of the adjacency matrices
+    spectra = np.zeros(data['K'], data['N'])
+    for k in range(data['K']):
+        spectra[k, :], _ = eigs(data['X', :, :], k= data['N'], which = 'LM', return_eigenvectors = False)
+        spectra[k, :] = np.real(spectra[k, :])
+    #Compute Wasserstein distance with 
+    A = np.zeros( (spectra.shape[0], spectra.shape[0]))
+    for i in range(A.shape[0]):
+        for j in range(i+1, A.shape[0]):
+            A[i,j] = wasserstein_distance(spectra[i,:], spectra[j,:])
+    A = A + np.transpose(A)
+    #We perform spectral clustering for weighted matrices
+    #Turn into an affinity matrix
+    A = np.exp( - A/(2*np.mean(np.mean(A))))
+    A = A - np.diag(np.diag(A)) 
+    L = get_laplacian(A)
+    #Get first M eigenvectors
+    _, vecs = eigs(L, k= hyper['M'], which = 'LM')
+    sp_emb = np.real(vecs[:, np.arange(0,hyper['M']-1)]) #Consider only their real parts
+    #We normalize the rows to norm 1, this seems to be a good idea according to Andrew Ng. 2002
+    l2_norms = np.sqrt((sp_emb * sp_emb).sum(axis=1)).reshape(data['K'], 1)
+    sp_emb = sp_emb/l2_norms
+    #Perform k-means++
+    kmeans = KMeans(n_clusters= hyper['M'], random_state= seed, n_init = 25).fit(sp_emb)
+    coms = kmeans.labels_
+    
+    for k in range(data['K']):
+        com = coms[k]
+        MU[k, com] = 1
+
+    return MU
+
+def init_MU_spectral(data, hyper, seed):
+    MU = np.ones((data['K'], hyper['M']))/(10**12)
+    #Compute moments
     if 'orders' not in hyper.keys():
         sp_moms = get_spectral_moms(data['X'], orders = [2, 4, 6, 8])
     else:
