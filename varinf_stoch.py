@@ -114,27 +114,24 @@ def infer(data, prior, hyper, mom, par, verbose = True):
 
         if par['ALG'] == 'natgrad':
 
-            mom_new = dict()
             step = (2 + t)**(-par['nat_step_rate'])
 
             ALPHA, BETA = msbm.update_Pi(data, prior, hyper, mom, par)
-            mom_new['ALPHA'] = (1.0 - step) * mom['ALPHA'] + step * ALPHA
-            mom_new['BETA'] = (1.0 - step) * mom['BETA'] + step * BETA
+            mom['ALPHA'] = (1.0 - step) * mom['ALPHA'] + step * ALPHA
+            mom['BETA'] = (1.0 - step) * mom['BETA'] + step * BETA
 
             NU = msbm.update_gamma(data, prior, hyper, mom, par)
-            mom_new['NU'] = (1.0 - step) * mom['NU'] + step * NU
+            mom['NU'] = (1.0 - step) * mom['NU'] + step * NU
 
             LOG_MU = msbm.update_Y(data, prior, hyper, mom, par)
-            mom_new['LOG_MU'] = (1.0 - step) * mom['LOG_MU'] + (step) * LOG_MU
-            mom_new['MU'] = msbm.par_from_mom_MU(mom_new, par)
+            mom['LOG_MU'] = (1.0 - step) * mom['LOG_MU'] + (step) * LOG_MU
+            mom['MU'] = msbm.par_from_mom_MU(mom, par)
 
             ZETA = msbm.update_rho(data, prior, hyper, mom, par)
-            mom_new['ZETA'] = (1.0 - step) * mom['ZETA'] + step * ZETA
+            mom['ZETA'] = (1.0 - step) * mom['ZETA'] + step * ZETA
 
             LOG_TAU = msbm.update_Z(data, prior, hyper, mom, par)
-            mom_new['LOG_TAU'] = (1.0 - step) * mom['LOG_TAU'] + step * LOG_TAU
-            mom_new['TAU'] = msbm.TAU_from_LOG_TAU(mom_new, par)
-
-            mom = mom_new
+            mom['LOG_TAU'] = (1.0 - step) * mom['LOG_TAU'] + step * LOG_TAU
+            mom['TAU'] = msbm.TAU_from_LOG_TAU(mom, par)
 
     return mom, elbos

@@ -14,7 +14,7 @@ from scipy.stats import dirichlet
 def update_Pi(data, prior, hyper, mom, par, remove_self_loops=True):
 
     #Pick a subsample of b nodes for the stochastic varinf
-    b = data['N']
+    b = int(40)
     nodes = npr.choice(data['N'], b, replace = False)    
     str_sum = 'km, kij, kmiq, kmjr -> mqr'
     #the correction for this sampling implies dividing the approximated sum by the probability of each set
