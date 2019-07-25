@@ -24,6 +24,13 @@ def main():
 
 
     #line plot of ELBO
+    elbos = statistics['elbo_seq']
+    data2 = pd.DataFrame( {'TIME': range(len(elbos)) ,'ELBO': elbos })
+    plot2 = ggplot(data2, aes(x= 'TIME' , y= 'ELBO')) + geom_line() + ggtitle("Evolution of ELBO")
+    plot2_file = os.path.join('plots', 'plot_' + 'elbos.pdf')
+    plot2.save(plot2_file)
+    plt.clf()
+
     plt.plot(list(range(len(elbos))), statistics['elbo_seq'], '-o')
     plt.xlabel(r'time, $t$', fontsize=12)
     plt.ylabel(r'ELBO, $\mathfrac{L}$', fontsize=12)

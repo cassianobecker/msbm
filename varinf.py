@@ -42,9 +42,9 @@ def check_stopping(t, par, elbos):
         stop = True
         reason = 'STOPPED (ELBO tolerance {:1.4e} achieved).'.format(par['TOL_ELBO'])
 
-    if sum(np.diff(elbos['all'])<0) > 14:
+    if sum(np.diff(elbos['all'])<0) > 9:
         stop = True
-        reason = 'STOPPED (ELBO oscillated 15 times)'
+        reason = 'STOPPED (ELBO oscillated 10 times)'
 
     if t == par['MAX_ITER'] - 1:
         stop = True
@@ -108,18 +108,13 @@ def infer(data, prior, hyper, mom, par, verbose = True):
         # ####################### CAVI IMPLEMENTATION ########################
 
         if par['ALG'] == 'cavi':
-
             ALPHA, BETA = msbm.update_Pi(data, prior, hyper, mom, par)
             mom['ALPHA'] = ALPHA
             mom['BETA'] = BETA
 
-            LOG_TAU = msbm.update_Z(data, prior, hyper, mom, par)
-            mom['LOG_TAU'] = LOG_TAU
-            mom['TAU'] = msbm.TAU_from_LOG_TAU(mom, par)
-
             NU = msbm.update_gamma(data, prior, hyper, mom, par)
             mom['NU'] = NU
-            
+
             LOG_MU = msbm.update_Y(data, prior, hyper, mom, par)
             mom['LOG_MU'] = LOG_MU
             mom['MU'] = msbm.par_from_mom_MU(mom, par)
@@ -127,30 +122,30 @@ def infer(data, prior, hyper, mom, par, verbose = True):
             ZETA = msbm.update_rho(data, prior, hyper, mom, par)
             mom['ZETA'] = ZETA
 
+            LOG_TAU = msbm.update_Z(data, prior, hyper, mom, par)
+            mom['LOG_TAU'] = LOG_TAU
+            mom['TAU'] = msbm.TAU_from_LOG_TAU(mom, par)
+
         # ##################### NATGRAD IMPLEMENTATION #######################
 
         if par['ALG'] == 'natgrad':
 
-            mom_new = dict()
-
             ALPHA, BETA = msbm.update_Pi(data, prior, hyper, mom, par)
-            mom_new['ALPHA'] = (1.0 - par['nat_step']) * mom['ALPHA'] + par['nat_step'] * ALPHA
-            mom_new['BETA'] = (1.0 - par['nat_step']) * mom['BETA'] + par['nat_step'] * BETA
+            mom['ALPHA'] = (1.0 - par['nat_step']) * mom['ALPHA'] + par['nat_step'] * ALPHA
+            mom['BETA'] = (1.0 - par['nat_step']) * mom['BETA'] + par['nat_step'] * BETA
 
             NU = msbm.update_gamma(data, prior, hyper, mom, par)
-            mom_new['NU'] = (1.0 - par['nat_step']) * mom['NU'] + par['nat_step'] * NU
-
-            LOG_TAU = msbm.update_Z(data, prior, hyper, mom, par)
-            mom_new['LOG_TAU'] = (1.0 - par['nat_step']) * mom['LOG_TAU'] + par['nat_step'] * LOG_TAU
-            mom_new['TAU'] = msbm.TAU_from_LOG_TAU(mom_new, par)
+            mom['NU'] = (1.0 - par['nat_step']) * mom['NU'] + par['nat_step'] * NU
 
             LOG_MU = msbm.update_Y(data, prior, hyper, mom, par)
-            mom_new['LOG_MU'] = (1.0 - par['nat_step']) * mom['LOG_MU'] + (par['nat_step']) * LOG_MU
-            mom_new['MU'] = msbm.par_from_mom_MU(mom_new, par)
+            mom['LOG_MU'] = (1.0 - par['nat_step']) * mom['LOG_MU'] + (par['nat_step']) * LOG_MU
+            mom['MU'] = msbm.par_from_mom_MU(mom, par)
 
             ZETA = msbm.update_rho(data, prior, hyper, mom, par)
-            mom_new['ZETA'] = (1.0 - par['nat_step']) * mom['ZETA'] + par['nat_step'] * ZETA
+            mom['ZETA'] = (1.0 - par['nat_step']) * mom['ZETA'] + par['nat_step'] * ZETA
 
-            mom = mom_new
+            LOG_TAU = msbm.update_Z(data, prior, hyper, mom, par)
+            mom['LOG_TAU'] = (1.0 - par['nat_step']) * mom['LOG_TAU'] + par['nat_step'] * LOG_TAU
+            mom['TAU'] = msbm.TAU_from_LOG_TAU(mom, par)
 
     return mom, elbos

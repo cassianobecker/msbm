@@ -138,26 +138,26 @@ def infer(data, prior, hyper, mom, par, verbose = True):
         # ##################### NATGRAD IMPLEMENTATION #######################
 
         if par['ALG'] == 'natgrad':
-
             mom_new = dict()
+            stop_in = False
+            while not stop_in:
+                ALPHA, BETA = msbm.update_Pi(data, prior, hyper, mom, par)
+                mom_new['ALPHA'] = (1.0 - par['nat_step']) * mom['ALPHA'] + par['nat_step'] * ALPHA
+                mom_new['BETA'] = (1.0 - par['nat_step']) * mom['BETA'] + par['nat_step'] * BETA
 
-            ALPHA, BETA = msbm.update_Pi(data, prior, hyper, mom, par)
-            mom_new['ALPHA'] = (1.0 - par['nat_step']) * mom['ALPHA'] + par['nat_step'] * ALPHA
-            mom_new['BETA'] = (1.0 - par['nat_step']) * mom['BETA'] + par['nat_step'] * BETA
+                NU = msbm.update_gamma(data, prior, hyper, mom, par)
+                mom_new['NU'] = (1.0 - par['nat_step']) * mom['NU'] + par['nat_step'] * NU
 
-            NU = msbm.update_gamma(data, prior, hyper, mom, par)
-            mom_new['NU'] = (1.0 - par['nat_step']) * mom['NU'] + par['nat_step'] * NU
+                LOG_MU = msbm.update_Y(data, prior, hyper, mom, par)
+                mom_new['LOG_MU'] = (1.0 - par['nat_step']) * mom['LOG_MU'] + (par['nat_step']) * LOG_MU
+                mom_new['MU'] = msbm.par_from_mom_MU(mom_new, par)
+
+                ZETA = msbm.update_rho(data, prior, hyper, mom, par)
+                mom_new['ZETA'] = (1.0 - par['nat_step']) * mom['ZETA'] + par['nat_step'] * ZETA
 
             LOG_TAU = msbm.update_Z(data, prior, hyper, mom, par)
             mom_new['LOG_TAU'] = (1.0 - par['nat_step']) * mom['LOG_TAU'] + par['nat_step'] * LOG_TAU
             mom_new['TAU'] = msbm.TAU_from_LOG_TAU(mom_new, par)
-
-            LOG_MU = msbm.update_Y(data, prior, hyper, mom, par)
-            mom_new['LOG_MU'] = (1.0 - par['nat_step']) * mom['LOG_MU'] + (par['nat_step']) * LOG_MU
-            mom_new['MU'] = msbm.par_from_mom_MU(mom_new, par)
-
-            ZETA = msbm.update_rho(data, prior, hyper, mom, par)
-            mom_new['ZETA'] = (1.0 - par['nat_step']) * mom['ZETA'] + par['nat_step'] * ZETA
 
             mom = mom_new
 

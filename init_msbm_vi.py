@@ -4,7 +4,7 @@ import numpy.random as npr
 import networkx as nx
 from scipy.sparse.linalg import eigs
 from sklearn.cluster import KMeans
-import varinf2 as varinf
+import varinf as varinf
 import heapq as hp
 from util import *
 from scipy.stats import wasserstein_distance
@@ -209,7 +209,7 @@ def init_MU_spectral(data, hyper, seed):
         #Form a min heap with the edges and the distances
         h = [] #We now populate the heap
         for i in range(A.shape[0]):
-            for j in range(i+1, A.shape[0])
+            for j in range(i+1, A.shape[0]):
                 hp.heappush(h, ( A[i, j],(i, j)))
         for i in range(A.shape[0]- hyper['M'] + 1):
             edge = hp.heappop(h)[1]

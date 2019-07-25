@@ -1,8 +1,8 @@
 import pdb
 #import updates_msbm_vi as msbm
-import updates_msbm2_vi as msbm
+import updates_msbm_stoch as msbm
 from util import *
-
+import sys
 # ################### MAIN INFERENCE PROGRAM #####################
 
 
@@ -15,7 +15,7 @@ def get_default_parameters(par):
         par['kappas'] = sigmoid(np.linspace(0.5, par['MAX_ITER']/4, par['MAX_ITER']))
 
     if 'nat_step' not in par.keys():
-        par['nat_step'] = 0.5
+        step = 0.5
 
     par['MAX'] = 1000
 
@@ -108,47 +108,32 @@ def infer(data, prior, hyper, mom, par, verbose = True):
         # ####################### CAVI IMPLEMENTATION ########################
 
         if par['ALG'] == 'cavi':
-            ALPHA, BETA = msbm.update_Pi(data, prior, hyper, mom, par)
-            mom['ALPHA'] = ALPHA
-            mom['BETA'] = BETA
-
-            NU = msbm.update_gamma(data, prior, hyper, mom, par)
-            mom['NU'] = NU
-
-            LOG_MU = msbm.update_Y(data, prior, hyper, mom, par)
-            mom['LOG_MU'] = LOG_MU
-            mom['MU'] = msbm.par_from_mom_MU(mom, par)
-
-            ZETA = msbm.update_rho(data, prior, hyper, mom, par)
-            mom['ZETA'] = ZETA
-
-            LOG_TAU = msbm.update_Z(data, prior, hyper, mom, par)
-            mom['LOG_TAU'] = LOG_TAU
-            mom['TAU'] = msbm.TAU_from_LOG_TAU(mom, par)
+            sys.exit("There is no CAVI with stochastic variational inference. Try step size of 1, and no sampling.")
 
         # ##################### NATGRAD IMPLEMENTATION #######################
 
         if par['ALG'] == 'natgrad':
 
             mom_new = dict()
+            step = (2 + t)**(-par['nat_step_rate'])
 
             ALPHA, BETA = msbm.update_Pi(data, prior, hyper, mom, par)
-            mom_new['ALPHA'] = (1.0 - par['nat_step']) * mom['ALPHA'] + par['nat_step'] * ALPHA
-            mom_new['BETA'] = (1.0 - par['nat_step']) * mom['BETA'] + par['nat_step'] * BETA
+            mom_new['ALPHA'] = (1.0 - step) * mom['ALPHA'] + step * ALPHA
+            mom_new['BETA'] = (1.0 - step) * mom['BETA'] + step * BETA
 
             NU = msbm.update_gamma(data, prior, hyper, mom, par)
-            mom_new['NU'] = (1.0 - par['nat_step']) * mom['NU'] + par['nat_step'] * NU
-
-            LOG_TAU = msbm.update_Z(data, prior, hyper, mom, par)
-            mom_new['LOG_TAU'] = (1.0 - par['nat_step']) * mom['LOG_TAU'] + par['nat_step'] * LOG_TAU
-            mom_new['TAU'] = msbm.TAU_from_LOG_TAU(mom_new, par)
+            mom_new['NU'] = (1.0 - step) * mom['NU'] + step * NU
 
             LOG_MU = msbm.update_Y(data, prior, hyper, mom, par)
-            mom_new['LOG_MU'] = (1.0 - par['nat_step']) * mom['LOG_MU'] + (par['nat_step']) * LOG_MU
+            mom_new['LOG_MU'] = (1.0 - step) * mom['LOG_MU'] + (step) * LOG_MU
             mom_new['MU'] = msbm.par_from_mom_MU(mom_new, par)
 
             ZETA = msbm.update_rho(data, prior, hyper, mom, par)
-            mom_new['ZETA'] = (1.0 - par['nat_step']) * mom['ZETA'] + par['nat_step'] * ZETA
+            mom_new['ZETA'] = (1.0 - step) * mom['ZETA'] + step * ZETA
+
+            LOG_TAU = msbm.update_Z(data, prior, hyper, mom, par)
+            mom_new['LOG_TAU'] = (1.0 - step) * mom['LOG_TAU'] + step * LOG_TAU
+            mom_new['TAU'] = msbm.TAU_from_LOG_TAU(mom_new, par)
 
             mom = mom_new
 

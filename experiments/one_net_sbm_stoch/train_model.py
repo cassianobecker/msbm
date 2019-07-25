@@ -9,7 +9,7 @@ import pdb
 sys.path.insert(0, '../..')
 import util as ut
 import init_msbm_vi as im
-import varinf
+import varinf as varinf
 
 
 def main():
@@ -38,8 +38,9 @@ def main():
 
         par = dict()
         par['MAX_ITER'] = 1000
-        par['TOL_ELBO'] = 1.e-16
-        par['ALG'] = 'cavi'
+        par['TOL_ELBO'] = 1.e-19
+        par['ALG'] = 'natgrad'
+        par['nat_step'] = 1
 
         results_mom, elbo_seq = varinf.infer(data, prior, hyper, mom, par)
 
