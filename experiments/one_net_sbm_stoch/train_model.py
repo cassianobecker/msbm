@@ -40,7 +40,7 @@ def main():
         par['MAX_ITER'] = 1000
         par['TOL_ELBO'] = 1.e-19
         par['ALG'] = 'natgrad'
-        par['nat_step_rate'] = 0
+        par['nat_step_rate'] = 0.6
 
         results_mom, elbo_seq = varinf.infer(data, prior, hyper, mom, par)
 

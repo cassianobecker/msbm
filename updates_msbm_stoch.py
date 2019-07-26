@@ -20,7 +20,7 @@ def update_Pi(data, prior, hyper, mom, par, remove_self_loops=True):
     #the correction for this sampling implies dividing the approximated sum by the probability of each set
     #times the count of in how many sets is a pair in. 
     NEW_ALPHA = par['kappa']*(prior['ALPHA_0']
-                              + (b/(data['N']))*np.einsum(str_sum, mom['MU'], data['X'][:, nodes, :],
+                              + ((data['N'])/b)*np.einsum(str_sum, mom['MU'], data['X'][:, nodes, :],
                                           mom['TAU'][:, :, nodes, :], mom['TAU']) - 1.0) + 1.0
     if remove_self_loops:
         NON_EDGES = data['NON_X']
@@ -28,7 +28,7 @@ def update_Pi(data, prior, hyper, mom, par, remove_self_loops=True):
         NON_EDGES = 1.0 - data['X']
 
     NEW_BETA = par['kappa']*(prior['BETA_0']
-                             + (b/(data['N']))*np.einsum(str_sum, mom['MU'], NON_EDGES[:, nodes, :],
+                             + ((data['N'])/b)*np.einsum(str_sum, mom['MU'], NON_EDGES[:, nodes, :],
                                          mom['TAU'][:, :, nodes, :], mom['TAU']) - 1.0) + 1.0
 
     return NEW_ALPHA, NEW_BETA
@@ -39,6 +39,9 @@ def Pi_from_mom(mom):
     return Pi_estimate
 
 def update_Z(data, prior, hyper, mom, par, remove_self_loops=True):
+    #Pick a subsample of b nodes for the stochastic varinf
+    b = int(data['N']/3)
+    nodes = npr.choice(data['N'], b, replace = False)
 
     if remove_self_loops:
         NON_EDGES = data['NON_X']
@@ -49,11 +52,11 @@ def update_Z(data, prior, hyper, mom, par, remove_self_loops=True):
     #replaced mom['MU'] with np.ones(mom['NU']) to obtain the desired dimensions
     S1 = np.einsum('km,mq,i->kmiq', np.ones(mom['MU'].shape), NU_diff, np.ones(data['N']))
     #TODO: Speed up by not computing psi(alpha + beta) twice
-    P_EDGES = np.einsum('kij,mqr->mqrijk', data['X'], sp.psi(mom['ALPHA']) - sp.psi(mom['ALPHA'] + mom['BETA']))
+    P_EDGES = np.einsum('kij,mqr->mqrijk', data['X'][:, :, nodes], sp.psi(mom['ALPHA']) - sp.psi(mom['ALPHA'] + mom['BETA']))
 
-    P_NONEDGES = np.einsum('kij,mqr->mqrijk', NON_EDGES, sp.psi(mom['BETA']) - sp.psi(mom['ALPHA'] + mom['BETA']))
-
-    S2 = np.einsum('km,kmjr,mqrijk->kmiq', mom['MU'], mom['TAU'], P_EDGES + P_NONEDGES)
+    P_NONEDGES = np.einsum('kij,mqr->mqrijk', NON_EDGES[:, :, nodes], sp.psi(mom['BETA']) - sp.psi(mom['ALPHA'] + mom['BETA']))
+    #Divide by probability of node being chosen
+    S2 = (data['N']/b)*np.einsum('km,kmjr,mqrijk->kmiq', mom['MU'], mom['TAU'][:, :, nodes, :], P_EDGES + P_NONEDGES)
 
     NEW_LOG_TAU = par['kappa']*(S1 + S2)
 
