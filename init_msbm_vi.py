@@ -38,14 +38,19 @@ def init_moments(data, hyper, seed = None, sparse = True, unshuffle = True):
         #The guessed community memberships need to sort of match, where all the "large communities" are considered as coming
         #from the same entry of the Pi matrix of interconnection probabilities which is guessed later from the TAU.
         mom['TAU'] = unshuffle_TAU(data, hyper, mom['TAU'])
-    mom['LOG_TAU'] = np.log(mom['TAU'])
     if sparse:
         for k in range(data['K']):
-            mom['MU'][k, :] = (mom['MU'][k, :] == np.max(mom['MU'][k, :])) + 0 
+            clus = np.argmax(mom['MU'][k, :])
+            mom['MU'][k, :] = 1e-17 
+            mom['MU'][k, clus] = 1
+            mom['MU'][k, :] = mom['MU'][k, :]/np.sum(mom['MU'][k, :])
             for m in range(hyper['M']):
                 for n in range(data['N']):
-                    mom['TAU'][k, m, n ,:] = (mom['TAU'][k, m, n ,:] == np.max(mom['TAU'][k, m, n ,:])) + 0  
-
+                    com = np.argmax(mom['TAU'][k, m, n ,:]) 
+                    mom['TAU'][k, m, n ,:] = 1e-17
+                    mom['TAU'][k, m, n , com] = 1 
+                    mom['TAU'][k, m, n ,:] = mom['TAU'][k, m, n ,:] / np.sum(mom['TAU'][k, m, n ,:])
+                    mom['LOG_TAU'] = np.log(mom['TAU'])
     return mom
 
 

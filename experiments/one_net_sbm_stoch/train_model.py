@@ -31,7 +31,8 @@ def main():
         hyper = dict()
         hyper['M'] = data['M']
         hyper['Q'] = data['Q']
-        hyper['init_TAU'] = 'distance'
+        hyper['init_TAU'] = 'some_truth'
+        hyper['init_LAMB_TAU'] = 0.4
 
         # initialize moments
         mom = im.init_moments(data, hyper)
@@ -40,7 +41,7 @@ def main():
         par['MAX_ITER'] = 1000
         par['TOL_ELBO'] = 1.e-19
         par['ALG'] = 'natgrad'
-        par['nat_step_rate'] = 0.6
+        par['nat_step_rate'] = 0.7
 
         results_mom, elbo_seq = varinf.infer(data, prior, hyper, mom, par)
 

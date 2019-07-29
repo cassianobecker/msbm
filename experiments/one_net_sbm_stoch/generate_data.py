@@ -14,8 +14,8 @@ import generate_multistrataSBM as gn
 
 def main():
     data=  gn.create_multistrata(
-        Q= 4, N = 500, K = 1, M=1,
-        pii = [0.13], c = 20,
+        Q= 4, N = 1500, K = 1, M=1,
+        pii = [0.0302], c = 12,
         path_data = 'data',
         fname = 'one_net',
         verbose = True)

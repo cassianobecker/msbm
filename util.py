@@ -38,6 +38,23 @@ def find_col(idc):
 
     return col
 
+#For doing node stratified sampling in stochastic varinf
+def gen_stratified_sets(X, m):
+    #generate a long list of size K*N, each element is a list of size m+1
+    S = []
+    for k in X.shape[0]:
+        for i in range(X.shape[1]):
+            l = []
+            #put all the neighbors of X
+            l.append(np.where(X[k, i, :] != 1)[0])
+            #put m groups of non-edges that partition that set
+            non_edges = np.where(X[k, i, :] == 0)[0]
+            memberships = npr.choice(range(m), len(non_edges), True)
+            for z in range(m):
+                l.append(non_edges[np.where(memberships == z)])
+            S.append(l)
+            
+    return S
 
 def adj_rand(tau, X):
 

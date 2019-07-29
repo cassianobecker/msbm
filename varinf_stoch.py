@@ -42,10 +42,6 @@ def check_stopping(t, par, elbos):
         stop = True
         reason = 'STOPPED (ELBO tolerance {:1.4e} achieved).'.format(par['TOL_ELBO'])
 
-    if sum(np.diff(elbos['all'])<0) > 9:
-        stop = True
-        reason = 'STOPPED (ELBO oscillated 10 times)'
-
     if t == par['MAX_ITER'] - 1:
         stop = True
         reason = 'STOPPED (maximum number of iterations = {:d} achieved).'.format(par['MAX_ITER'])
@@ -93,17 +89,18 @@ def infer(data, prior, hyper, mom, par, verbose = True):
 
         par['kappa'] = par['kappas'][t]
 
-        elbos = msbm.compute_elbos(data, prior, hyper, mom, par, elbos)
+        if t%25 == 0:
+            elbos = msbm.compute_elbos(data, prior, hyper, mom, par, elbos)
 
-        if verbose:
-            print_status(t, data, mom, par, elbos)
-
-        stop, reason = check_stopping(t, par, elbos)
-
-        if stop:
             if verbose:
-                print(reason)
-            return mom, elbos
+                print_status(t, data, mom, par, elbos)
+
+            stop, reason = check_stopping(t, par, elbos)
+
+            if stop:
+                if verbose:
+                    print(reason)
+                return mom, elbos
 
         # ####################### CAVI IMPLEMENTATION ########################
 
@@ -114,7 +111,7 @@ def infer(data, prior, hyper, mom, par, verbose = True):
 
         if par['ALG'] == 'natgrad':
 
-            step = (2 + t)**(-par['nat_step_rate'])
+            step = (1 + t)**(-par['nat_step_rate'])
 
             ALPHA, BETA = msbm.update_Pi(data, prior, hyper, mom, par)
             mom['ALPHA'] = (1.0 - step) * mom['ALPHA'] + step * ALPHA

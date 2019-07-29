@@ -15,21 +15,22 @@ def update_Pi(data, prior, hyper, mom, par, remove_self_loops=True):
 
     #Pick a subsample of b nodes for the stochastic varinf
     b = int(40)
-    nodes = npr.choice(data['N'], b, replace = False)    
+    nodes1 = npr.choice(data['N'], b, replace = False)
+    nodes2 = npr.choice(data['N'], b, replace = False)    
     str_sum = 'km, kij, kmiq, kmjr -> mqr'
     #the correction for this sampling implies dividing the approximated sum by the probability of each set
     #times the count of in how many sets is a pair in. 
     NEW_ALPHA = par['kappa']*(prior['ALPHA_0']
-                              + ((data['N'])/b)*np.einsum(str_sum, mom['MU'], data['X'][:, nodes, :],
-                                          mom['TAU'][:, :, nodes, :], mom['TAU']) - 1.0) + 1.0
+                              + ((data['N'])/b)*np.einsum(str_sum, mom['MU'], data['X'][:, nodes1, :],
+                                          mom['TAU'][:, :, nodes2, :], mom['TAU']) - 1.0) + 1.0
     if remove_self_loops:
         NON_EDGES = data['NON_X']
     else:
         NON_EDGES = 1.0 - data['X']
 
     NEW_BETA = par['kappa']*(prior['BETA_0']
-                             + ((data['N'])/b)*np.einsum(str_sum, mom['MU'], NON_EDGES[:, nodes, :],
-                                         mom['TAU'][:, :, nodes, :], mom['TAU']) - 1.0) + 1.0
+                             + ((data['N'])/b)*np.einsum(str_sum, mom['MU'], NON_EDGES[:, nodes1, :],
+                                         mom['TAU'][:, :, nodes2, :], mom['TAU']) - 1.0) + 1.0
 
     return NEW_ALPHA, NEW_BETA
 
@@ -40,7 +41,7 @@ def Pi_from_mom(mom):
 
 def update_Z(data, prior, hyper, mom, par, remove_self_loops=True):
     #Pick a subsample of b nodes for the stochastic varinf
-    b = int(data['N']/3)
+    b = int(50)
     nodes = npr.choice(data['N'], b, replace = False)
 
     if remove_self_loops:
