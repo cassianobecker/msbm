@@ -89,7 +89,7 @@ def infer(data, prior, hyper, mom, par, verbose = True):
 
         par['kappa'] = par['kappas'][t]
 
-        if t%25 == 0:
+        if t%1 == 0:
             elbos = msbm.compute_elbos(data, prior, hyper, mom, par, elbos)
 
             if verbose:
@@ -120,9 +120,9 @@ def infer(data, prior, hyper, mom, par, verbose = True):
             NU = msbm.update_gamma(data, prior, hyper, mom, par)
             mom['NU'] = (1.0 - step) * mom['NU'] + step * NU
 
-            LOG_MU = msbm.update_Y(data, prior, hyper, mom, par)
-            mom['LOG_MU'] = (1.0 - step) * mom['LOG_MU'] + (step) * LOG_MU
-            mom['MU'] = msbm.par_from_mom_MU(mom, par)
+            # LOG_MU = msbm.update_Y(data, prior, hyper, mom, par)
+            # mom['LOG_MU'] = (1.0 - step) * mom['LOG_MU'] + (step) * LOG_MU
+            # mom['MU'] = msbm.par_from_mom_MU(mom, par)
 
             ZETA = msbm.update_rho(data, prior, hyper, mom, par)
             mom['ZETA'] = (1.0 - step) * mom['ZETA'] + step * ZETA

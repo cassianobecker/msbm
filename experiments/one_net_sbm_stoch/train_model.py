@@ -6,10 +6,12 @@
 import sys, os
 import pickle
 import pdb
+import numpy as np
 sys.path.insert(0, '../..')
 import util as ut
 import init_msbm_vi as im
-import varinf_stoch as varinf
+#import varinf_stoch1 as varinf
+import varinf_iter_stoch as varinf
 
 
 def main():
@@ -32,16 +34,18 @@ def main():
         hyper['M'] = data['M']
         hyper['Q'] = data['Q']
         hyper['init_TAU'] = 'some_truth'
-        hyper['init_LAMB_TAU'] = 0.4
+        hyper['init_LAMB_TAU'] = 0
 
         # initialize moments
         mom = im.init_moments(data, hyper)
 
         par = dict()
         par['MAX_ITER'] = 1000
-        par['TOL_ELBO'] = 1.e-19
+        par['kappas'] = np.ones(par['MAX_ITER'])
+        par['TOL_ELBO'] = 1.e-10
         par['ALG'] = 'natgrad'
-        par['nat_step_rate'] = 0.7
+        #par['nat_step'] = 1 #For comparing against plain varinf natgrad
+        par['nat_step_rate'] = 0.8
 
         results_mom, elbo_seq = varinf.infer(data, prior, hyper, mom, par)
 

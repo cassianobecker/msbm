@@ -1,6 +1,7 @@
 import pdb
 #import updates_msbm_vi as msbm
 import updates_msbm_stoch as msbm
+import updates_msbm2_vi as msbm2
 from util import *
 import sys
 # ################### MAIN INFERENCE PROGRAM #####################
@@ -89,7 +90,7 @@ def infer(data, prior, hyper, mom, par, verbose = True):
 
         par['kappa'] = par['kappas'][t]
 
-        if t%25 == 0:
+        if t%1 == 0:
             elbos = msbm.compute_elbos(data, prior, hyper, mom, par, elbos)
 
             if verbose:
@@ -111,7 +112,7 @@ def infer(data, prior, hyper, mom, par, verbose = True):
 
         if par['ALG'] == 'natgrad':
 
-            step = (1 + t)**(-par['nat_step_rate'])
+            step = (2 + t)**(-par['nat_step_rate'])
 
             ALPHA, BETA = msbm.update_Pi(data, prior, hyper, mom, par)
             mom['ALPHA'] = (1.0 - step) * mom['ALPHA'] + step * ALPHA

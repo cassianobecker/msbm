@@ -102,7 +102,9 @@ def infer(data, prior, hyper, mom, par, verbose = True):
 
         if stop:
             if verbose:
-                print(reason)
+                print(reason)            LOG_MU = msbm.update_Y(data, prior, hyper, mom, par)
+            mom['LOG_MU'] = (1.0 - par['nat_step']) * mom['LOG_MU'] + (par['nat_step']) * LOG_MU
+            mom['MU'] = msbm.par_from_mom_MU(mom, par)
             return mom, elbos
 
         # ####################### CAVI IMPLEMENTATION ########################

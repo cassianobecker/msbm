@@ -49,7 +49,13 @@ def update_Z(data, prior, hyper, mom, par, remove_self_loops=True):
 
     S2 = np.einsum('km,kmjr,mqrijk->kmiq', mom['MU'], mom['TAU'], P_EDGES + P_NONEDGES)
 
-    NEW_LOG_TAU = par['kappa']*(S1 + S2)
+    LOG_TAU = (S1 + S2)
+
+    NEW_TAU = np.exp(LOG_TAU - np.expand_dims(np.max(LOG_TAU, axis=1), axis=1))
+
+    NEW_TAU = NEW_TAU / np.expand_dims(np.sum(NEW_TAU, axis=1), axis=1)
+
+    NEW_LOG_TAU = par['kappa']*(np.log(NEW_TAU))
 
     return NEW_LOG_TAU
 
@@ -80,7 +86,14 @@ def update_Y(data, prior, hyper, mom, par, remove_self_loops=True):
 
     S2 = np.einsum('kmiq,kmjr,mqrijk->km', mom['TAU'], mom['TAU'], P_EDGES + P_NONEDGES)
 
-    NEW_LOG_MU = par['kappa']*(S1 + S2)
+    LOG_MU = S1 + S2
+
+    NEW_MU = np.exp(LOG_MU - np.expand_dims(np.max(LOG_MU, axis=1), axis=1))
+
+    NEW_MU = NEW_MU / np.expand_dims(np.sum(NEW_MU, axis=1), axis=1)
+    #From this we can recover the normalized natural parameters
+    NEW_LOG_MU = par['kappa']*(np.log(NEW_MU))
+
     return NEW_LOG_MU
 
 

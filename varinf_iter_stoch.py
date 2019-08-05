@@ -1,6 +1,5 @@
 import pdb
-#import updates_msbm_vi as msbm
-import updates_msbm_stoch as msbm
+import updates_msbm_vi_iter_stoch as msbm
 from util import *
 import sys
 # ################### MAIN INFERENCE PROGRAM #####################
@@ -86,13 +85,13 @@ def infer(data, prior, hyper, mom, par, verbose = True):
     elbos = dict()
 
     m = 30
-    data['strata'] = gen_stratified_sets(X, m)
+    data['strata'] = gen_stratified_sets(data['X'], m)
 
     for t in range(par['MAX']):
 
         par['kappa'] = par['kappas'][t]
 
-        if t%25 == 0:
+        if t%1 == 0:
             elbos = msbm.compute_elbos(data, prior, hyper, mom, par, elbos)
 
             if verbose:
@@ -114,24 +113,25 @@ def infer(data, prior, hyper, mom, par, verbose = True):
 
         if par['ALG'] == 'natgrad':
 
-            step = (1 + t)**(-par['nat_step_rate'])
+            step = (200 + t)**(-par['nat_step_rate'])
 
             ALPHA, BETA = msbm.update_Pi(data, prior, hyper, mom, par)
             mom['ALPHA'] = (1.0 - step) * mom['ALPHA'] + step * ALPHA
             mom['BETA'] = (1.0 - step) * mom['BETA'] + step * BETA
-
+            
             NU = msbm.update_gamma(data, prior, hyper, mom, par)
             mom['NU'] = (1.0 - step) * mom['NU'] + step * NU
-
-            LOG_MU = msbm.update_Y(data, prior, hyper, mom, par)
-            mom['LOG_MU'] = (1.0 - step) * mom['LOG_MU'] + (step) * LOG_MU
-            mom['MU'] = msbm.par_from_mom_MU(mom, par)
+            
+            # LOG_MU = msbm.update_Y(data, prior, hyper, mom, par)
+            # mom['LOG_MU'] = (1.0 - step) * mom['LOG_MU'] + (step) * LOG_MU
+            # mom['MU'] = msbm.par_from_mom_MU(mom, par)
+            # print("Updated Mu")
 
             ZETA = msbm.update_rho(data, prior, hyper, mom, par)
             mom['ZETA'] = (1.0 - step) * mom['ZETA'] + step * ZETA
 
+            pdb.set_trace()
             LOG_TAU = msbm.update_Z(data, prior, hyper, mom, par)
             mom['LOG_TAU'] = (1.0 - step) * mom['LOG_TAU'] + step * LOG_TAU
             mom['TAU'] = msbm.TAU_from_LOG_TAU(mom, par)
-
     return mom, elbos

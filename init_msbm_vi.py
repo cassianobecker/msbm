@@ -40,17 +40,17 @@ def init_moments(data, hyper, seed = None, sparse = True, unshuffle = True):
         mom['TAU'] = unshuffle_TAU(data, hyper, mom['TAU'])
     if sparse:
         for k in range(data['K']):
-            clus = np.argmax(mom['MU'][k, :])
+            clus = npr.choice(np.where( mom['MU'][k, :]== np.max(mom['MU'][k, :]) )[0],1)
             mom['MU'][k, :] = 1e-17 
             mom['MU'][k, clus] = 1
             mom['MU'][k, :] = mom['MU'][k, :]/np.sum(mom['MU'][k, :])
             for m in range(hyper['M']):
                 for n in range(data['N']):
-                    com = np.argmax(mom['TAU'][k, m, n ,:]) 
+                    com = npr.choice(np.where( mom['TAU'][k, m, n ,:] == np.max(mom['TAU'][k, m, n ,:]) )[0], 1)
                     mom['TAU'][k, m, n ,:] = 1e-17
                     mom['TAU'][k, m, n , com] = 1 
                     mom['TAU'][k, m, n ,:] = mom['TAU'][k, m, n ,:] / np.sum(mom['TAU'][k, m, n ,:])
-                    mom['LOG_TAU'] = np.log(mom['TAU'])
+        mom['LOG_TAU'] = np.log(mom['TAU'])
     return mom
 
 

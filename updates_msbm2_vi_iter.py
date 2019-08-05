@@ -19,14 +19,14 @@ def update_Pi(data, prior, hyper, mom, par, remove_self_loops):
 
 def update_Z(data, prior, hyper, mom, par, remove_self_loops):
 
-    NEW_LOG_TAU = np.zeros((data['K'], data['M'], data['N'], data['Q']))
+    LOG_TAU = np.zeros((data['K'], data['M'], data['N'], data['Q']))
 
     for m in range(data['M']):
         for k in range(data['K']):
 
             for i in range(data['N']):
                 for q in range(data['Q']):
-                    NEW_LOG_TAU[k, m, i, q] = get_log_tau_kmiq(
+                    LOG_TAU[k, m, i, q] = get_log_tau_kmiq(
                         i, q,
                         data['N'], data['Q'], data['X'][k, :, :],
                         mom['TAU'][k, m, :, :],
@@ -36,11 +36,19 @@ def update_Z(data, prior, hyper, mom, par, remove_self_loops):
                         mom['MU'][k, m],
                         remove_self_loops)
 
+    NEW_TAU = np.exp(LOG_TAU - np.expand_dims(np.max(LOG_TAU, axis=1), axis=1))
+
+    NEW_TAU = NEW_TAU / np.expand_dims(np.sum(NEW_TAU, axis=1), axis=1)
+
+    NEW_LOG_TAU = np.log(NEW_TAU)
+
     return NEW_LOG_TAU
 
 
 def get_log_tau_kmiq(i, q, N, Q, Xk, tau_km, a_m, b_m, nu_m, mu_km, remove_self_loops):
 
+    pnuq = sp.psi(nu_m[q])
+    psnuq = sp.psi(np.sum(nu_m))
     log_tau_km_x = np.zeros((N, Q))
     log_tau_km_non_x = np.zeros((N, Q))
 
@@ -59,8 +67,7 @@ def get_log_tau_kmiq(i, q, N, Q, Xk, tau_km, a_m, b_m, nu_m, mu_km, remove_self_
                 log_tau_km_x[j, r] = tau_kmjr * (x_kij * (psi_a_mqr - psi_ab_mqr))
                 log_tau_km_non_x[j, r] = tau_kmjr * ((1-x_kij)*(psi_b_mqr - psi_ab_mqr))
 
-    pnuq = sp.psi(nu_m[q])
-    psnuq = sp.psi(np.sum(nu_m))
+
 
     log_tau_kmiq = pnuq - psnuq + mu_km*(np.sum(np.sum(log_tau_km_x)) + np.sum(np.sum(log_tau_km_non_x)))
 
@@ -71,12 +78,12 @@ def get_log_tau_kmiq(i, q, N, Q, Xk, tau_km, a_m, b_m, nu_m, mu_km, remove_self_
 
 def update_Y(data, prior, hyper, mom, par, remove_self_loops):
 
-    NEW_LOG_MU = np.zeros((data['K'], data['M']))
+    LOG_MU = np.zeros((data['K'], data['M']))
 
     for k in range(data['K']):
         for m in range(data['M']):
 
-            NEW_LOG_MU[k, m] = get_log_mu_km(m,
+            LOG_MU[k, m] = get_log_mu_km(m,
                                              data['N'], data['Q'], data['X'][k, :, :],
                                              mom['TAU'][k, m, :, :],
                                              mom['ALPHA'][m, :, :],
@@ -84,6 +91,12 @@ def update_Y(data, prior, hyper, mom, par, remove_self_loops):
                                              mom['ZETA'],
                                              mom['NU'][m, :],
                                              remove_self_loops)
+
+    NEW_MU = np.exp(LOG_MU - np.expand_dims(np.max(LOG_MU, axis=1), axis=1))
+
+    NEW_MU = NEW_MU / np.expand_dims(np.sum(NEW_MU, axis=1), axis=1)
+    #From this we can recover the normalized natural parameters
+    NEW_LOG_MU = np.log(NEW_MU)
 
     return NEW_LOG_MU
 

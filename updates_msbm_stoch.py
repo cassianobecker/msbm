@@ -14,15 +14,14 @@ from scipy.stats import dirichlet
 def update_Pi(data, prior, hyper, mom, par, remove_self_loops=True):
 
     #Pick a subsample of b nodes for the stochastic varinf
-    b = int(40)
+    b = int(data['N'])
     nodes1 = npr.choice(data['N'], b, replace = False)
-    nodes2 = npr.choice(data['N'], b, replace = False)    
     str_sum = 'km, kij, kmiq, kmjr -> mqr'
     #the correction for this sampling implies dividing the approximated sum by the probability of each set
     #times the count of in how many sets is a pair in. 
     NEW_ALPHA = par['kappa']*(prior['ALPHA_0']
                               + ((data['N'])/b)*np.einsum(str_sum, mom['MU'], data['X'][:, nodes1, :],
-                                          mom['TAU'][:, :, nodes2, :], mom['TAU']) - 1.0) + 1.0
+                                          mom['TAU'][:, :, nodes1, :], mom['TAU'][:, :, :, :]) - 1.0) + 1.0
     if remove_self_loops:
         NON_EDGES = data['NON_X']
     else:
@@ -30,7 +29,7 @@ def update_Pi(data, prior, hyper, mom, par, remove_self_loops=True):
 
     NEW_BETA = par['kappa']*(prior['BETA_0']
                              + ((data['N'])/b)*np.einsum(str_sum, mom['MU'], NON_EDGES[:, nodes1, :],
-                                         mom['TAU'][:, :, nodes2, :], mom['TAU']) - 1.0) + 1.0
+                                         mom['TAU'][:, :, nodes1, :], mom['TAU']) - 1.0) + 1.0
 
     return NEW_ALPHA, NEW_BETA
 
@@ -41,7 +40,7 @@ def Pi_from_mom(mom):
 
 def update_Z(data, prior, hyper, mom, par, remove_self_loops=True):
     #Pick a subsample of b nodes for the stochastic varinf
-    b = int(50)
+    b = int(data['N'])
     nodes = npr.choice(data['N'], b, replace = False)
 
     if remove_self_loops:
@@ -59,7 +58,13 @@ def update_Z(data, prior, hyper, mom, par, remove_self_loops=True):
     #Divide by probability of node being chosen
     S2 = (data['N']/b)*np.einsum('km,kmjr,mqrijk->kmiq', mom['MU'], mom['TAU'][:, :, nodes, :], P_EDGES + P_NONEDGES)
 
-    NEW_LOG_TAU = par['kappa']*(S1 + S2)
+    LOG_TAU = (S1 + S2)
+
+    NEW_TAU = np.exp(LOG_TAU - np.expand_dims(np.max(LOG_TAU, axis=1), axis=1))
+
+    NEW_TAU = NEW_TAU / np.expand_dims(np.sum(NEW_TAU, axis=1), axis=1)
+    
+    NEW_LOG_TAU = par['kappa']*(np.log(NEW_TAU))
 
     return NEW_LOG_TAU
 
@@ -90,7 +95,14 @@ def update_Y(data, prior, hyper, mom, par, remove_self_loops=True):
 
     S2 = np.einsum('kmiq,kmjr,mqrijk->km', mom['TAU'], mom['TAU'], P_EDGES + P_NONEDGES)
 
-    NEW_LOG_MU = par['kappa']*(S1 + S2)
+    LOG_MU = S1 + S2
+
+    NEW_MU = np.exp(LOG_MU - np.expand_dims(np.max(LOG_MU, axis=1), axis=1))
+
+    NEW_MU = NEW_MU / np.expand_dims(np.sum(NEW_MU, axis=1), axis=1)
+    #From this we can recover the normalized natural parameters
+    NEW_LOG_MU = par['kappa']*(np.log(NEW_MU))
+
     return NEW_LOG_MU
 
 

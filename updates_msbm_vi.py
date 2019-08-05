@@ -13,7 +13,6 @@ from scipy.stats import dirichlet
 def update_Pi(data, prior, hyper, mom, par, remove_self_loops= True):
 
     str_sum = 'km, kij, kmiq, kmjr -> mqr'
-
     NEW_ALPHA = par['kappa']*(prior['ALPHA_0']
                               + np.einsum(str_sum, mom['MU'], data['X'],
                                           mom['TAU'], mom['TAU']) - 1.0) + 1.0
@@ -44,14 +43,19 @@ def update_Z(data, prior, hyper, mom, par, remove_self_loops= True):
 
     S1 = np.einsum('km,mq,i->kmiq', mom['MU'], NU_diff, np.ones(data['N']))
 
-    #TODO: Speed up by not computing psi(alpha + beta) twice
     P_EDGES = np.einsum('kij,mqr->mqrijk', data['X'], sp.psi(mom['ALPHA']) - sp.psi(mom['ALPHA'] + mom['BETA']))
 
     P_NONEDGES = np.einsum('kij,mqr->mqrijk', NON_EDGES, sp.psi(mom['BETA']) - sp.psi(mom['ALPHA'] + mom['BETA']))
 
     S2 = np.einsum('km,kmjr,mqrijk->kmiq', mom['MU'], mom['TAU'], P_EDGES + P_NONEDGES)
 
-    NEW_LOG_TAU = par['kappa']*(S1 + S2)
+    LOG_TAU = (S1 + S2)
+
+    NEW_TAU = np.exp(LOG_TAU - np.expand_dims(np.max(LOG_TAU, axis=1), axis=1))
+
+    NEW_TAU = NEW_TAU / np.expand_dims(np.sum(NEW_TAU, axis=1), axis=1)
+
+    NEW_LOG_TAU = par['kappa']*(np.log(NEW_TAU))
 
     return NEW_LOG_TAU
 
@@ -63,7 +67,6 @@ def TAU_from_LOG_TAU(mom, par):
     NEW_TAU = NEW_TAU / np.expand_dims(np.sum(NEW_TAU, axis=3), axis=3)
 
     return NEW_TAU
-
 
 def update_Y(data, prior, hyper, mom, par, remove_self_loops= True):
 
@@ -85,20 +88,25 @@ def update_Y(data, prior, hyper, mom, par, remove_self_loops= True):
     NUdiff = sp.psi(mom['NU']) - sp.psi(np.einsum('ij,k->ik', mom['NU'], np.ones(hyper['Q'])))
 
     S3 = np.einsum('kmiq,mq->km', mom['TAU'], NUdiff)
+    #We obtain the unnormalized natural parameters.
+    LOG_MU = (S1 + S2 + S3)
 
-    NEW_LOG_MU = par['kappa']*(S1 + S2 + S3)
+    NEW_MU = np.exp(LOG_MU - np.expand_dims(np.max(LOG_MU, axis=1), axis=1))
+
+    NEW_MU = NEW_MU / np.expand_dims(np.sum(NEW_MU, axis=1), axis=1)
+    #From this we can recover the normalized natural parameters
+    NEW_LOG_MU = par['kappa']*(np.log(NEW_MU))
 
     return NEW_LOG_MU
 
 
-def par_from_mom_MU(mom, par):
+def par_from_mom_MU(mom, par): #This works for CAVI, but we need another method for natgrad
 
     NEW_MU = np.exp(mom['LOG_MU'] - np.expand_dims(np.max(mom['LOG_MU'], axis=1), axis=1))
 
     NEW_MU = NEW_MU / np.expand_dims(np.sum(NEW_MU, axis=1), axis=1)
 
     return NEW_MU
-
 
 def update_gamma(data, prior, hyper, mom, par, remove_self_loops=True):
 

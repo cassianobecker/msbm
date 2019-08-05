@@ -4,6 +4,7 @@ import random
 import pdb
 import networkx as nx
 import numpy as np
+import numpy.random as npr
 from bisect import *
 import heapq as hp
 import scipy.sparse as sps
@@ -42,18 +43,20 @@ def find_col(idc):
 def gen_stratified_sets(X, m):
     #generate a long list of size K*N, each element is a list of size m+1
     S = []
-    for k in X.shape[0]:
+    for k in range(X.shape[0]):
         for i in range(X.shape[1]):
             l = []
             #put all the neighbors of X
-            l.append(np.where(X[k, i, :] != 1)[0])
+            l.append(np.where(X[k, i, :] != 0)[0])
             #put m groups of non-edges that partition that set
             non_edges = np.where(X[k, i, :] == 0)[0]
+            #exclude i from this set
+            non_edges=  np.delete(non_edges, np.where(y == i))
             memberships = npr.choice(range(m), len(non_edges), True)
             for z in range(m):
                 l.append(non_edges[np.where(memberships == z)])
             S.append(l)
-            
+
     return S
 
 def adj_rand(tau, X):

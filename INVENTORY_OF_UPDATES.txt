@@ -1,0 +1,19 @@
+These are all the types of updates we have:
+
+* updates_msbm_vi: Plain variational updates using einsums. This version has updates assuming that there is a conditional dependence in P(Z| Y, gamma). Has option of tempered annealing. This produces differences in the updates of Z and Y. 
+
+* updates_msbm2_vi: Plain variational updates using einsums. This version has updates assuming that there is conditional independence between Z and Y once we know gamma P(Z | gamma). This makes sense, because we have multiple sets of Z, one for each type of model and we need to update all of those. Then Y needs to decide which one it prefers. Plus, experimentally it was shown that these updates produced better results. Has option of tempered annealing.  This produces differences in the updates of Z and Y. 
+
+* updates_msbm_vi_iter: Version of updates_msbm_vi with for loops instead of einsums. It does not support tempered annealing and uses einsums for computing the elbos, and was used as a check for correctness of the einsums as well as inspiration for stochastic variational inference sampling. 
+
+* updates_msbm2_vi_iter: Version of updates_msbm_vi with for loops instead of einsums. Does not support tempered annealing and uses einsums for computing the elbos. 
+
+*updates_msbm_stoch: Stochastic version of updates_msbm2_vi (because it is the one that performed the best). The sampling strategy here is to drop down everything to O(n) but keep the einsum structure. To this end:
+	+ In update_Pi: we do node sampling, we consider all the pairs of nodes that involve node i. 
+	+ In update_Z: we update all the Taus, but for the update of i (which looks like a belief propagation step) we restrict ourselves to the interactions with a sample of the other nodes (which might or might not form a link)
+
+*updates_msbm_stoch1: Stochastic version of updates_msbm2_vi where we try to reduce the complexity to O(1):
+	+ In update_Pi: We learn the parameters of the model from the product of two sets of randomly selected nodes, that is, from the frequencies of edges of each type in a small subset of the pairs. The fact that the subset of pairs is the product of two sets is to make it ammenable to einsums. 
+	+ In update_Pi: we update a subset of al the Taus, considering pairs formed with a subset of the nodes in the networks. All nodes get updated according to the same subset of nodes, to make it ammenable to einsums. 
+
+*updates_msbm_vi_iter_stoch: Stochastic version of updates_msbm2_vi_iter where we try to do stratified sampling (as apparently it speeds things up a lot) where we select a node at random and then flip a coin to see if we update according to the neighboring pairs, or one of M groups of the non-neighboring pairs. 
