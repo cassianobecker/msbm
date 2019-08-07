@@ -15,8 +15,8 @@ def get_default_parameters(par):
     if 'kappas' not in par.keys():
         par['kappas'] = sigmoid(np.linspace(0.5, par['MAX_ITER']/4, par['MAX_ITER']))
 
-    if 'nat_step' not in par.keys():
-        step = 0.5
+    if 'nat_step_rate' not in par.keys():
+        par['nat_step_rate'] = 0.9
 
     par['MAX'] = 1000
 
@@ -112,7 +112,7 @@ def infer(data, prior, hyper, mom, par, verbose = True):
 
         if par['ALG'] == 'natgrad':
 
-            step = (2 + t)**(-par['nat_step_rate'])
+            step = (3 + t)**(-par['nat_step_rate'])
 
             ALPHA, BETA = msbm.update_Pi(data, prior, hyper, mom, par)
             mom['ALPHA'] = (1.0 - step) * mom['ALPHA'] + step * ALPHA

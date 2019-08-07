@@ -14,7 +14,7 @@ from scipy.stats import dirichlet
 def update_Pi(data, prior, hyper, mom, par, remove_self_loops=True):
 
     #Pick a subsample of b nodes for the stochastic varinf
-    b = int(data['N'])
+    b = int(40)
     nodes1 = npr.choice(data['N'], b, replace = False)
     nodes2 = npr.choice(data['N'], b, replace = True)    
     str_sum = 'km, kij, kmiq, kmjr -> mqr'
@@ -42,7 +42,7 @@ def Pi_from_mom(mom):
 def update_Z(data, prior, hyper, mom, par, remove_self_loops=True):
     #Pick a subsample of b nodes for the stochastic varinf
     NEW_LOG_TAU = mom['LOG_TAU'].copy()
-    b = int(data['N'])
+    b = int(40)
     nodes1 = npr.choice(data['N'], b, replace = False)
     nodes2 = npr.choice(data['N'], b, replace = True)
 
@@ -59,13 +59,13 @@ def update_Z(data, prior, hyper, mom, par, remove_self_loops=True):
 
     P_NONEDGES = np.einsum('kij,mqr->mqrijk', NON_EDGES[:, nodes1[:, None], nodes2], sp.psi(mom['BETA']) - sp.psi(mom['ALPHA'] + mom['BETA']))
     #Divide by probability of node being chosen
-    S2 = (data['N']/b)*np.einsum('km,kmjr,mqrijk->kmiq', mom['MU'], mom['TAU'][:, :, nodes2, :], P_EDGES + P_NONEDGES)
+    S2 = np.einsum('km,kmjr,mqrijk->kmiq', mom['MU'], mom['TAU'][:, :, nodes2, :], P_EDGES + P_NONEDGES)
 
-    LOG_TAU_nodes1 = S1 + S2
+    LOG_TAU_nodes1 = S1 + (data['N']/b)*S2
 
-    NEW_TAU_nodes1 = np.exp(LOG_TAU_nodes1 - np.expand_dims(np.max(LOG_TAU_nodes1, axis=1), axis=1))
+    NEW_TAU_nodes1 = np.exp(LOG_TAU_nodes1 - np.expand_dims(np.max(LOG_TAU_nodes1, axis=3), axis=3)) + 1e-17
 
-    NEW_TAU_nodes1 = NEW_TAU_nodes1 / np.expand_dims(np.sum(NEW_TAU_nodes1, axis=1), axis=1)
+    NEW_TAU_nodes1 = NEW_TAU_nodes1 / np.expand_dims(np.sum(NEW_TAU_nodes1, axis=3), axis=3)
 
     NEW_LOG_TAU[:, :, nodes1, :] = par['kappa']*(np.log(NEW_TAU_nodes1))
 

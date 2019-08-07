@@ -41,13 +41,13 @@ def init_moments(data, hyper, seed = None, sparse = True, unshuffle = True):
     if sparse:
         for k in range(data['K']):
             clus = npr.choice(np.where( mom['MU'][k, :]== np.max(mom['MU'][k, :]) )[0],1)
-            mom['MU'][k, :] = 1e-17 
+            mom['MU'][k, :] = 1e-5 
             mom['MU'][k, clus] = 1
             mom['MU'][k, :] = mom['MU'][k, :]/np.sum(mom['MU'][k, :])
             for m in range(hyper['M']):
                 for n in range(data['N']):
                     com = npr.choice(np.where( mom['TAU'][k, m, n ,:] == np.max(mom['TAU'][k, m, n ,:]) )[0], 1)
-                    mom['TAU'][k, m, n ,:] = 1e-17
+                    mom['TAU'][k, m, n ,:] = 1e-5
                     mom['TAU'][k, m, n , com] = 1 
                     mom['TAU'][k, m, n ,:] = mom['TAU'][k, m, n ,:] / np.sum(mom['TAU'][k, m, n ,:])
         mom['LOG_TAU'] = np.log(mom['TAU'])

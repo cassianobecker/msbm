@@ -14,7 +14,7 @@ from scipy.stats import dirichlet
 def update_Pi(data, prior, hyper, mom, par, remove_self_loops=True):
 
     #Pick a subsample of b nodes for the stochastic varinf
-    b = int(data['N'])
+    b = int(60)
     nodes1 = npr.choice(data['N'], b, replace = False)
     str_sum = 'km, kij, kmiq, kmjr -> mqr'
     #the correction for this sampling implies dividing the approximated sum by the probability of each set
@@ -40,7 +40,7 @@ def Pi_from_mom(mom):
 
 def update_Z(data, prior, hyper, mom, par, remove_self_loops=True):
     #Pick a subsample of b nodes for the stochastic varinf
-    b = int(data['N'])
+    b = int(60)
     nodes = npr.choice(data['N'], b, replace = False)
 
     if remove_self_loops:
@@ -60,10 +60,10 @@ def update_Z(data, prior, hyper, mom, par, remove_self_loops=True):
 
     LOG_TAU = (S1 + S2)
 
-    NEW_TAU = np.exp(LOG_TAU - np.expand_dims(np.max(LOG_TAU, axis=1), axis=1))
+    NEW_TAU = np.exp(LOG_TAU - np.expand_dims(np.max(LOG_TAU, axis=3), axis=3))
 
-    NEW_TAU = NEW_TAU / np.expand_dims(np.sum(NEW_TAU, axis=1), axis=1)
-    
+    NEW_TAU = NEW_TAU / np.expand_dims(np.sum(NEW_TAU, axis=3), axis=3)
+
     NEW_LOG_TAU = par['kappa']*(np.log(NEW_TAU))
 
     return NEW_LOG_TAU

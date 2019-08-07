@@ -5,10 +5,12 @@ import numpy as np
 import numpy.random as npr
 import scipy.special as sp
 import pdb
+from scipy.stats import beta
+from scipy.stats import dirichlet
 # ################ UPDATE FUNCTIONS #########################
 
 
-def update_Pi(data, prior, hyper, mom, par, remove_self_loops = True):
+def update_Pi(data, prior, hyper, mom, par):
 
     NEW_ALPHA = np.zeros((data['M'], data['Q'], data['Q']))
     NEW_BETA = np.zeros((data['M'], data['Q'], data['Q']))
@@ -17,7 +19,7 @@ def update_Pi(data, prior, hyper, mom, par, remove_self_loops = True):
         for q in range(data['Q']):
             for r in range(data['Q']):
 
-                [aqr, bqr] = get_sum_a_b_pi(m, q, r, data, mom, par, prior, remove_self_loops)
+                [aqr, bqr] = get_sum_a_b_pi(m, q, r, data, mom, par, prior)
 
                 NEW_ALPHA[m, q, r] = prior['ALPHA_0'] + aqr
 
@@ -30,41 +32,35 @@ def Pi_from_mom(mom):
     Pi_estimate = beta.stats(mom['ALPHA'],mom['BETA'],moments='m')
     return Pi_estimate
 
-def get_sum_a_b_pi(m, q, r, data, mom, par, prior, remove_self_loops = True):
+def get_sum_a_b_pi(m, q, r, data, mom, par, prior):
 
     aqr = 0
     bqr = 0
-    b = int(data['N'])
+    b = int(50)
     m_size = len(data['strata'][0])
     #sample a subset of the networks K
     nets = npr.choice(data['K'], min(int(b/4), data['K']), replace = False)
     #For some nodes, flip a coin to decide if you sample a link set or non-link set
-    coin = npr.binomial(1, .5, 1)
-    if coin == 1:
-        for k in nets:
-            nodes = npr.choice(data['N'], b, replace = False)
-            for i in nodes:
-                for j in data['strata'][k*data['N'] + i][0]:
-                    aqr = aqr + data['X'][k, i, j]*mom['MU'][k, m] \
-                        * mom['TAU'][k, m, i, q] * mom['TAU'][k, m, j, r]
 
-                    bqr = bqr + (1 - data['X'][k, i, j])*mom['MU'][k, m] \
-                        * mom['TAU'][k, m, i, q] * mom['TAU'][k, m, j, r]
-        aqr = (2*data['N']/b)*aqr
-        bqr = (2*data['N']/b)*bqr
-    else:
-        for k in nets:
-            nodes = npr.choice(data['N'], b, replace = False)
-            for i in nodes:
-                m_ = npr.choice(range(1, m_size), 1)[0]
-                for j in data['strata'][k*data['N'] + i][m_]:
-                    aqr = aqr + data['X'][k, i, j]*mom['MU'][k, m] \
-                        * mom['TAU'][k, m, i, q] * mom['TAU'][k, m, j, r]
+    for k in nets:
+        nodes = npr.choice(data['N'], b, replace = False)
+        for i in nodes:
+                coin = npr.binomial(1, .5, 1)
+                if coin == 1:
+                    for j in data['strata'][k*data['N'] + i][0]:
+                        aqr = aqr + (2*data['N'])*data['X'][k, i, j]*mom['MU'][k, m] \
+                              * mom['TAU'][k, m, i, q] * mom['TAU'][k, m, j, r]
 
-                    bqr = bqr + (1 - data['X'][k, i, j])*mom['MU'][k, m] \
-                        * mom['TAU'][k, m, i, q] * mom['TAU'][k, m, j, r]
-        aqr = (2*(m_size-1)*data['N']/b)*aqr
-        bqr = (2*(m_size-1)*data['N']/b)*bqr
+                        bqr = bqr + (2*data['N'])*(1 - data['X'][k, i, j])*mom['MU'][k, m] \
+                            * mom['TAU'][k, m, i, q] * mom['TAU'][k, m, j, r]
+                else:
+                    m_ = npr.choice(range(1, m_size), 1)[0]
+                    for j in data['strata'][k*data['N'] + i][m_]:
+                        aqr = aqr + (2*(m_size-1)*data['N'])*data['X'][k, i, j]*mom['MU'][k, m] \
+                            * mom['TAU'][k, m, i, q] * mom['TAU'][k, m, j, r]
+
+                        bqr = bqr + (2*(m_size-1)*data['N'])*(1 - data['X'][k, i, j])*mom['MU'][k, m] \
+                            * mom['TAU'][k, m, i, q] * mom['TAU'][k, m, j, r]
     return aqr, bqr
 
 
@@ -73,7 +69,7 @@ def get_sum_a_b_pi(m, q, r, data, mom, par, prior, remove_self_loops = True):
 def update_Z(data, prior, hyper, mom, par, remove_self_loops = True):
 
     LOG_TAU = mom['LOG_TAU'].copy()
-    b = int(data['N'])
+    b = int(50)
     m_size = len(data['strata'][0])
     nets = npr.choice(data['K'], min(int(b/4), data['K']), replace = False)
     for m in range(data['M']):
@@ -86,7 +82,7 @@ def update_Z(data, prior, hyper, mom, par, remove_self_loops = True):
                         LOG_TAU[k, m, i, q] = get_log_tau_kmiq(
                             i, q,
                             data['N'], data['Q'], data['X'][k, :, :][:, data['strata'][k*data['N'] + i][0]],
-                            mom['TAU'][k, m, :, :],
+                            mom['TAU'][k, m, :, :][data['strata'][k*data['N'] + i][0], :],
                             mom['ALPHA'][m, :, :],
                             mom['BETA'][m, :, :],
                             mom['NU'][m, :],
@@ -99,16 +95,17 @@ def update_Z(data, prior, hyper, mom, par, remove_self_loops = True):
                         LOG_TAU[k, m, i, q] = get_log_tau_kmiq(
                             i, q,
                             data['N'], data['Q'], data['X'][k, :, :][:, data['strata'][k*data['N'] + i][m_]],
-                            mom['TAU'][k, m, :, :],
+                            mom['TAU'][k, m, :, :][data['strata'][k*data['N'] + i][m_], :],
                             mom['ALPHA'][m, :, :],
                             mom['BETA'][m, :, :],
                             mom['NU'][m, :],
                             mom['MU'][k, m],
                             2*(m_size-1))   
 
-    NEW_TAU = np.exp(LOG_TAU - np.expand_dims(np.max(LOG_TAU, axis=1), axis=1))
+   
+    NEW_TAU = np.exp(LOG_TAU - np.expand_dims(np.max(LOG_TAU, axis=3), axis=3))
 
-    NEW_TAU = NEW_TAU / np.expand_dims(np.sum(NEW_TAU, axis=1), axis=1)
+    NEW_TAU = NEW_TAU / np.expand_dims(np.sum(NEW_TAU, axis=3), axis=3)
 
     NEW_LOG_TAU = np.log(NEW_TAU)                
 
@@ -123,15 +120,13 @@ def get_log_tau_kmiq(i, q, N, Q, Xk, tau_km, a_m, b_m, nu_m, mu_km, rescale):
     log_tau_km_x = np.zeros((N, Q))
     log_tau_km_non_x = np.zeros((N, Q))
 
-    log_tau_km = np.zeros((N, Q))
-
     for j in range(Xk.shape[1]):
         for r in range(Q):
 
             if not j==i:
 
                 x_kij = Xk[i, j]
-                tau_kmjr = tau_km[j, r]
+                tau_kmjr = tau_km[j, r] #FOUND THE BUG
 
                 psi_a_mqr = sp.psi(a_m[q, r])
                 psi_b_mqr = sp.psi(b_m[q, r])
@@ -140,7 +135,7 @@ def get_log_tau_kmiq(i, q, N, Q, Xk, tau_km, a_m, b_m, nu_m, mu_km, rescale):
                 log_tau_km_x[j, r] = tau_kmjr * (x_kij * (psi_a_mqr - psi_ab_mqr))
                 log_tau_km_non_x[j, r] = tau_kmjr * ((1-x_kij)*(psi_b_mqr - psi_ab_mqr))
 
-    log_tau_kmiq = (pnuq - psnuq) + rescale * mu_km * mu_km*(np.sum(np.sum(log_tau_km_x)) + np.sum(np.sum(log_tau_km_non_x)))
+    log_tau_kmiq = (pnuq - psnuq) + rescale * mu_km*(np.sum(np.sum(log_tau_km_x)) + np.sum(np.sum(log_tau_km_non_x)))
 
     return log_tau_kmiq
 

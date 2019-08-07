@@ -43,6 +43,10 @@ def get_sum_a_b_pi(m, q, r, data, mom, par, prior, remove_self_loops = True):
 
     return aqr, bqr
 
+def Pi_from_mom(mom):
+
+    Pi_estimate = beta.stats(mom['ALPHA'],mom['BETA'],moments='m')
+    return Pi_estimate
 
 # ###########################################################
 
@@ -65,9 +69,9 @@ def update_Z(data, prior, hyper, mom, par, remove_self_loops = True):
                         mom['MU'][k, m],
                         remove_self_loops)
 
-    NEW_TAU = np.exp(LOG_TAU - np.expand_dims(np.max(LOG_TAU, axis=1), axis=1))
+    NEW_TAU = np.exp(LOG_TAU - np.expand_dims(np.max(LOG_TAU, axis=3), axis=3))
 
-    NEW_TAU = NEW_TAU / np.expand_dims(np.sum(NEW_TAU, axis=1), axis=1)
+    NEW_TAU = NEW_TAU / np.expand_dims(np.sum(NEW_TAU, axis=3), axis=3)
 
     NEW_LOG_TAU = np.log(NEW_TAU)
 

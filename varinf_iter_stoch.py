@@ -1,5 +1,8 @@
 import pdb
 import updates_msbm_vi_iter_stoch as msbm
+import updates_msbm2_vi as msbm2
+import updates_msbm2_vi_iter as msbm3
+import numpy as np
 from util import *
 import sys
 # ################### MAIN INFERENCE PROGRAM #####################
@@ -13,8 +16,8 @@ def get_default_parameters(par):
     if 'kappas' not in par.keys():
         par['kappas'] = sigmoid(np.linspace(0.5, par['MAX_ITER']/4, par['MAX_ITER']))
 
-    if 'nat_step' not in par.keys():
-        step = 0.5
+    if 'nat_step_rate' not in par.keys():
+        par['nat_step_rate'] = 0.9
 
     par['MAX'] = 1000
 
@@ -75,6 +78,9 @@ def print_status(t, data, mom, par, elbos):
                 t + 1, par['MAX_ITER'], par['kappa'], elbos['all'][-1]))
 
 
+def peek_TAU( tensor ):
+    return tensor[0,0, range(15), :]
+
 def infer(data, prior, hyper, mom, par, verbose = True):
     #ADD NON_X to the Data (non edges without self loops)
     par = get_default_parameters(par)
@@ -84,7 +90,7 @@ def infer(data, prior, hyper, mom, par, verbose = True):
 
     elbos = dict()
 
-    m = 30
+    m = 6
     data['strata'] = gen_stratified_sets(data['X'], m)
 
     for t in range(par['MAX']):
@@ -113,7 +119,7 @@ def infer(data, prior, hyper, mom, par, verbose = True):
 
         if par['ALG'] == 'natgrad':
 
-            step = (200 + t)**(-par['nat_step_rate'])
+            step = (3 + t)**(-par['nat_step_rate'])
 
             ALPHA, BETA = msbm.update_Pi(data, prior, hyper, mom, par)
             mom['ALPHA'] = (1.0 - step) * mom['ALPHA'] + step * ALPHA
@@ -121,17 +127,21 @@ def infer(data, prior, hyper, mom, par, verbose = True):
             
             NU = msbm.update_gamma(data, prior, hyper, mom, par)
             mom['NU'] = (1.0 - step) * mom['NU'] + step * NU
-            
+
             # LOG_MU = msbm.update_Y(data, prior, hyper, mom, par)
             # mom['LOG_MU'] = (1.0 - step) * mom['LOG_MU'] + (step) * LOG_MU
             # mom['MU'] = msbm.par_from_mom_MU(mom, par)
             # print("Updated Mu")
 
-            ZETA = msbm.update_rho(data, prior, hyper, mom, par)
-            mom['ZETA'] = (1.0 - step) * mom['ZETA'] + step * ZETA
-
-            pdb.set_trace()
+            # ZETA = msbm.update_rho(data, prior, hyper, mom, par)
+            # mom['ZETA'] = (1.0 - step) * mom['ZETA'] + step * ZETA
             LOG_TAU = msbm.update_Z(data, prior, hyper, mom, par)
+            # pdb.set_trace()
+            # print(peek_TAU(LOG_TAU))
+            # print(np.exp(peek_TAU(LOG_TAU)))
+            # print(np.sum(np.exp(peek_TAU(LOG_TAU)), axis = 1))
             mom['LOG_TAU'] = (1.0 - step) * mom['LOG_TAU'] + step * LOG_TAU
             mom['TAU'] = msbm.TAU_from_LOG_TAU(mom, par)
+
     return mom, elbos
+

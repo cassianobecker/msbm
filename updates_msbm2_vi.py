@@ -50,10 +50,10 @@ def update_Z(data, prior, hyper, mom, par, remove_self_loops=True):
     S2 = np.einsum('km,kmjr,mqrijk->kmiq', mom['MU'], mom['TAU'], P_EDGES + P_NONEDGES)
 
     LOG_TAU = (S1 + S2)
+    
+    NEW_TAU = np.exp(LOG_TAU - np.expand_dims(np.max(LOG_TAU, axis=3), axis=3))
 
-    NEW_TAU = np.exp(LOG_TAU - np.expand_dims(np.max(LOG_TAU, axis=1), axis=1))
-
-    NEW_TAU = NEW_TAU / np.expand_dims(np.sum(NEW_TAU, axis=1), axis=1)
+    NEW_TAU = NEW_TAU / np.expand_dims(np.sum(NEW_TAU, axis=3), axis=3)
 
     NEW_LOG_TAU = par['kappa']*(np.log(NEW_TAU))
 

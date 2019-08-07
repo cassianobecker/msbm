@@ -1,8 +1,8 @@
 import pdb
 #import updates_msbm_vi as msbm
-import updates_msbm_stoch1 as msbm
+import updates_msbm2_vi_iter as msbm
 from util import *
-import sys
+
 # ################### MAIN INFERENCE PROGRAM #####################
 
 
@@ -41,6 +41,10 @@ def check_stopping(t, par, elbos):
     if abs(relative_elbo) < par['TOL_ELBO']:
         stop = True
         reason = 'STOPPED (ELBO tolerance {:1.4e} achieved).'.format(par['TOL_ELBO'])
+
+    if sum(np.diff(elbos['all'])<0) > 9:
+        stop = True
+        reason = 'STOPPED (ELBO oscillated 10 times)'
 
     if t == par['MAX_ITER'] - 1:
         stop = True
@@ -89,29 +93,47 @@ def infer(data, prior, hyper, mom, par, verbose = True):
 
         par['kappa'] = par['kappas'][t]
 
-        if t%1 == 0:
-            elbos = msbm.compute_elbos(data, prior, hyper, mom, par, elbos)
+        elbos = msbm.compute_elbos(data, prior, hyper, mom, par, elbos)
 
+        if verbose:
+            print_status(t, data, mom, par, elbos)
+
+        stop, reason = check_stopping(t, par, elbos)
+
+        if stop:
             if verbose:
-                print_status(t, data, mom, par, elbos)
-
-            stop, reason = check_stopping(t, par, elbos)
-
-            if stop:
-                if verbose:
-                    print(reason)
-                return mom, elbos
+                print(reason)
+            LOG_MU = msbm.update_Y(data, prior, hyper, mom, par)
+            mom['LOG_MU'] = (1.0 - step) * mom['LOG_MU'] + (step) * LOG_MU
+            mom['MU'] = msbm.par_from_mom_MU(mom, par)
+            return mom, elbos
 
         # ####################### CAVI IMPLEMENTATION ########################
 
         if par['ALG'] == 'cavi':
-            sys.exit("There is no CAVI with stochastic variational inference. Try step size of 1, and no sampling.")
+            ALPHA, BETA = msbm.update_Pi(data, prior, hyper, mom, par)
+            mom['ALPHA'] = ALPHA
+            mom['BETA'] = BETA
+
+            NU = msbm.update_gamma(data, prior, hyper, mom, par)
+            mom['NU'] = NU
+
+            LOG_MU = msbm.update_Y(data, prior, hyper, mom, par)
+            mom['LOG_MU'] = LOG_MU
+            mom['MU'] = msbm.par_from_mom_MU(mom, par)
+
+            ZETA = msbm.update_rho(data, prior, hyper, mom, par)
+            mom['ZETA'] = ZETA
+
+            LOG_TAU = msbm.update_Z(data, prior, hyper, mom, par)
+            mom['LOG_TAU'] = LOG_TAU
+            mom['TAU'] = msbm.TAU_from_LOG_TAU(mom, par)
 
         # ##################### NATGRAD IMPLEMENTATION #######################
 
         if par['ALG'] == 'natgrad':
 
-            step = (1 + t)**(-par['nat_step_rate'])
+            step = (3 + t)**(-par['nat_step_rate'])
 
             ALPHA, BETA = msbm.update_Pi(data, prior, hyper, mom, par)
             mom['ALPHA'] = (1.0 - step) * mom['ALPHA'] + step * ALPHA
@@ -124,8 +146,8 @@ def infer(data, prior, hyper, mom, par, verbose = True):
             # mom['LOG_MU'] = (1.0 - step) * mom['LOG_MU'] + (step) * LOG_MU
             # mom['MU'] = msbm.par_from_mom_MU(mom, par)
 
-            ZETA = msbm.update_rho(data, prior, hyper, mom, par)
-            mom['ZETA'] = (1.0 - step) * mom['ZETA'] + step * ZETA
+            # ZETA = msbm.update_rho(data, prior, hyper, mom, par)
+            # mom['ZETA'] = (1.0 - step) * mom['ZETA'] + step * ZETA
 
             LOG_TAU = msbm.update_Z(data, prior, hyper, mom, par)
             mom['LOG_TAU'] = (1.0 - step) * mom['LOG_TAU'] + step * LOG_TAU

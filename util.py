@@ -51,7 +51,7 @@ def gen_stratified_sets(X, m):
             #put m groups of non-edges that partition that set
             non_edges = np.where(X[k, i, :] == 0)[0]
             #exclude i from this set
-            non_edges=  np.delete(non_edges, np.where(y == i))
+            non_edges=  np.delete(non_edges, np.where(non_edges == i))
             memberships = npr.choice(range(m), len(non_edges), True)
             for z in range(m):
                 l.append(non_edges[np.where(memberships == z)])
