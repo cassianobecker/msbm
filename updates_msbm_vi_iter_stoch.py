@@ -36,7 +36,7 @@ def get_sum_a_b_pi(m, q, r, data, mom, par, prior):
 
     aqr = 0
     bqr = 0
-    b = int(50)
+    b = int(150)
     m_size = len(data['strata'][0])
     #sample a subset of the networks K
     nets = npr.choice(data['K'], min(int(b/4), data['K']), replace = False)
@@ -69,7 +69,7 @@ def get_sum_a_b_pi(m, q, r, data, mom, par, prior):
 def update_Z(data, prior, hyper, mom, par, remove_self_loops = True):
 
     LOG_TAU = mom['LOG_TAU'].copy()
-    b = int(50)
+    b = int(150)
     m_size = len(data['strata'][0])
     nets = npr.choice(data['K'], min(int(b/4), data['K']), replace = False)
     for m in range(data['M']):

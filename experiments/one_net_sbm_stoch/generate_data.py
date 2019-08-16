@@ -13,12 +13,14 @@ import generate_multistrataSBM as gn
 # ################ INITIALIZATION FUNCTIONS ###############
 
 def main():
-    data=  gn.create_multistrata(
-        Q= 4, N = 300, K = 1, M=1,
-        pii = [0.140], c = 12,
-        path_data = 'data',
-        fname = 'one_net',
-        verbose = True)
+    for i in range(50):
+        j = int(i/10)*0.005
+        data= gn.create_multistrata(
+            Q= 4, N = 600, K = 1, M=1,
+            pii = [0.1 + j], c = 20,
+            path_data = 'data',
+            fname = 'net{:02d}'.format(i),
+            verbose = True)
     sys.exit()
 
 

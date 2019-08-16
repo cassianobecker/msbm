@@ -14,7 +14,7 @@ from scipy.stats import dirichlet
 def update_Pi(data, prior, hyper, mom, par, remove_self_loops=True):
 
     #Pick a subsample of b nodes for the stochastic varinf
-    b = int(40)
+    b = int(150)
     nodes1 = npr.choice(data['N'], b, replace = False)
     nodes2 = npr.choice(data['N'], b, replace = True)    
     str_sum = 'km, kij, kmiq, kmjr -> mqr'
@@ -42,7 +42,7 @@ def Pi_from_mom(mom):
 def update_Z(data, prior, hyper, mom, par, remove_self_loops=True):
     #Pick a subsample of b nodes for the stochastic varinf
     NEW_LOG_TAU = mom['LOG_TAU'].copy()
-    b = int(40)
+    b = int(150)
     nodes1 = npr.choice(data['N'], b, replace = False)
     nodes2 = npr.choice(data['N'], b, replace = True)
 

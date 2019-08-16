@@ -17,8 +17,8 @@ def get_default_parameters(par):
     if 'nat_step_rate' not in par.keys():
         par['nat_step_rate'] = 0.9
 
-    par['MAX'] = 1000
-
+    if 'MAX_ITER' not in par.keys():
+        par['MAX_ITER'] = 1000
     return par
 
 
@@ -89,7 +89,7 @@ def infer(data, prior, hyper, mom, par, verbose = True):
 
     elbos = dict()
 
-    for t in range(par['MAX']):
+    for t in range(par['MAX_ITER']):
 
         par['kappa'] = par['kappas'][t]
 

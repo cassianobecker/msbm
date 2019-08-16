@@ -18,8 +18,8 @@ def get_default_parameters(par):
     if 'nat_step_rate' not in par.keys():
         par['nat_step_rate'] = 0.9
 
-    par['MAX'] = 1000
-
+    if 'MAX_ITER' not in par.keys():
+        par['MAX_ITER'] = 1000
     return par
 
 
@@ -53,7 +53,7 @@ def check_stopping(t, par, elbos):
 def print_header(data, hyper, par):
 
     print('##############################################################')
-    print('                RUNNING ' + str.upper(par['ALG']) + ' FOR MSBM        ')
+    print('                RUNNING STOCHASTIC NATGRAD (node samp) FOR MSBM        ')
     print('                K = {:d}, M = {:d}, N = {:d}, Q = {:}'.
           format(data['K'], hyper['M'], data['N'], hyper['Q']))
     print('##############################################################')
@@ -86,11 +86,11 @@ def infer(data, prior, hyper, mom, par, verbose = True):
 
     elbos = dict()
 
-    for t in range(par['MAX']):
+    for t in range(par['MAX_ITER']):
 
         par['kappa'] = par['kappas'][t]
 
-        if t%1 == 0:
+        if t%100 == 0 or t%100 == 1:
             elbos = msbm.compute_elbos(data, prior, hyper, mom, par, elbos)
 
             if verbose:

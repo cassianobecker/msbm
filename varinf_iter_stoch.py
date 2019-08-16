@@ -1,7 +1,5 @@
 import pdb
 import updates_msbm_vi_iter_stoch as msbm
-import updates_msbm2_vi as msbm2
-import updates_msbm2_vi_iter as msbm3
 import numpy as np
 from util import *
 import sys
@@ -19,7 +17,8 @@ def get_default_parameters(par):
     if 'nat_step_rate' not in par.keys():
         par['nat_step_rate'] = 0.9
 
-    par['MAX'] = 1000
+    if 'MAX_ITER' not in par.keys():
+        par['MAX_ITER'] = 1000
 
     return par
 
@@ -54,7 +53,7 @@ def check_stopping(t, par, elbos):
 def print_header(data, hyper, par):
 
     print('##############################################################')
-    print('                RUNNING ' + str.upper(par['ALG']) + ' FOR MSBM        ')
+    print('                RUNNING STOCHASTIC NATGRAD (strat) FOR MSBM        ')
     print('                K = {:d}, M = {:d}, N = {:d}, Q = {:}'.
           format(data['K'], hyper['M'], data['N'], hyper['Q']))
     print('##############################################################')
@@ -90,14 +89,18 @@ def infer(data, prior, hyper, mom, par, verbose = True):
 
     elbos = dict()
 
-    m = 6
+    #select m so that on average the sets of non-links have the same size as the set of links
+    ##Get avg. degree of first network
+    avg_deg = np.mean(np.sum(data['X'][0,:,:], axis= 0))
+    ##Divide average number of non-links by avg_deg
+    m = int((data['N'] - avg_deg)/avg_deg)
     data['strata'] = gen_stratified_sets(data['X'], m)
 
-    for t in range(par['MAX']):
+    for t in range(par['MAX_ITER']):
 
         par['kappa'] = par['kappas'][t]
 
-        if t%1 == 0:
+        if t%200 == 0 or t%200 == 1:
             elbos = msbm.compute_elbos(data, prior, hyper, mom, par, elbos)
 
             if verbose:
@@ -136,10 +139,6 @@ def infer(data, prior, hyper, mom, par, verbose = True):
             # ZETA = msbm.update_rho(data, prior, hyper, mom, par)
             # mom['ZETA'] = (1.0 - step) * mom['ZETA'] + step * ZETA
             LOG_TAU = msbm.update_Z(data, prior, hyper, mom, par)
-            # pdb.set_trace()
-            # print(peek_TAU(LOG_TAU))
-            # print(np.exp(peek_TAU(LOG_TAU)))
-            # print(np.sum(np.exp(peek_TAU(LOG_TAU)), axis = 1))
             mom['LOG_TAU'] = (1.0 - step) * mom['LOG_TAU'] + step * LOG_TAU
             mom['TAU'] = msbm.TAU_from_LOG_TAU(mom, par)
 

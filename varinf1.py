@@ -1,5 +1,4 @@
 import pdb
-#import updates_msbm_vi as msbm
 import updates_msbm2_vi as msbm
 from util import *
 
@@ -17,7 +16,8 @@ def get_default_parameters(par):
     if 'nat_step' not in par.keys():
         par['nat_step'] = 0.5
 
-    par['MAX'] = 1000
+    if 'MAX_ITER' not in par.keys():
+        par['MAX_ITER'] = 1000
 
     return par
 
@@ -90,30 +90,31 @@ def infer(data, prior, hyper, mom, par, verbose = True):
     elbos = dict()
     elbos_in = dict()
 
-    for t in range(par['MAX']):
+    for t in range(par['MAX_ITER']):
 
         par['kappa'] = par['kappas'][t]
 
-        elbos = msbm.compute_elbos(data, prior, hyper, mom, par, elbos)
+        if t%50 == 0 or t%50 == 1:
+            elbos = msbm.compute_elbos(data, prior, hyper, mom, par, elbos)
 
-        if t > 0:
-            inner_t = len(elbos_in['all']) #Actual non-tau iterations
+            # if t > 0:
+            #     inner_t = len(elbos_in['all']) #Actual non-tau iterations
 
-        if verbose:
-            print_status(t, data, mom, par, elbos)
-
-        stop, reason = check_stopping(t, par, elbos)
-
-        if stop:
             if verbose:
-                print(reason)
-            return mom, elbos
+                print_status(t, data, mom, par, elbos)
+
+            stop, reason = check_stopping(t, par, elbos)
+
+            if stop:
+                if verbose:
+                    print(reason)
+                return mom, elbos
 
         # ####################### CAVI IMPLEMENTATION ########################
 
         if par['ALG'] == 'cavi':
             stop_in = False
-            while not stop_in:
+            while (not stop_in) and t_in < par['MAX_ITER']/100:
                 ALPHA, BETA = msbm.update_Pi(data, prior, hyper, mom, par)
                 mom['ALPHA'] = ALPHA
                 mom['BETA'] = BETA
@@ -128,8 +129,9 @@ def infer(data, prior, hyper, mom, par, verbose = True):
                 ZETA = msbm.update_rho(data, prior, hyper, mom, par)
                 mom['ZETA'] = ZETA
 
-                elbos_in = msbm.compute_elbos(data, prior, hyper, mom, par, elbos_in)
-                stop_in, _ = check_stopping(t, par, elbos_in)
+                if t_in %20 == 0 or t%20 == 1:
+                    elbos_in = msbm.compute_elbos(data, prior, hyper, mom, par, elbos_in)
+                    stop_in, _ = check_stopping(t, par, elbos_in)
 
             LOG_TAU = msbm.update_Z(data, prior, hyper, mom, par)
             mom['LOG_TAU'] = LOG_TAU
@@ -154,6 +156,10 @@ def infer(data, prior, hyper, mom, par, verbose = True):
 
                 ZETA = msbm.update_rho(data, prior, hyper, mom, par)
                 mom_new['ZETA'] = (1.0 - par['nat_step']) * mom['ZETA'] + par['nat_step'] * ZETA
+
+                if t_in %20 == 0 or t%20 == 1:
+                    elbos_in = msbm.compute_elbos(data, prior, hyper, mom, par, elbos_in)
+                    stop_in, _ = check_stopping(t, par, elbos_in)
 
             LOG_TAU = msbm.update_Z(data, prior, hyper, mom, par)
             mom_new['LOG_TAU'] = (1.0 - par['nat_step']) * mom['LOG_TAU'] + par['nat_step'] * LOG_TAU
