@@ -37,9 +37,10 @@ def get_sum_a_b_pi(m, q, r, data, mom, par, prior):
     aqr = 0
     bqr = 0
     b = int(150)
+    c = int(15)
     m_size = len(data['strata'][0])
     #sample a subset of the networks K
-    nets = npr.choice(data['K'], min(int(b/4), data['K']), replace = False)
+    nets = npr.choice(data['K'], np.max(c, data['K']), replace = False)
     #For some nodes, flip a coin to decide if you sample a link set or non-link set
 
     for k in nets:
@@ -48,18 +49,18 @@ def get_sum_a_b_pi(m, q, r, data, mom, par, prior):
                 coin = npr.binomial(1, .5, 1)
                 if coin == 1:
                     for j in data['strata'][k*data['N'] + i][0]:
-                        aqr = aqr + (2*data['N'])*data['X'][k, i, j]*mom['MU'][k, m] \
+                        aqr = aqr + ((data['K']/c)*data['N']/b)*data['X'][k, i, j]*mom['MU'][k, m] \
                               * mom['TAU'][k, m, i, q] * mom['TAU'][k, m, j, r]
 
-                        bqr = bqr + (2*data['N'])*(1 - data['X'][k, i, j])*mom['MU'][k, m] \
+                        bqr = bqr + ((data['K']/c)*data['N']/b)*(1 - data['X'][k, i, j])*mom['MU'][k, m] \
                             * mom['TAU'][k, m, i, q] * mom['TAU'][k, m, j, r]
                 else:
                     m_ = npr.choice(range(1, m_size), 1)[0]
                     for j in data['strata'][k*data['N'] + i][m_]:
-                        aqr = aqr + (2*(m_size-1)*data['N'])*data['X'][k, i, j]*mom['MU'][k, m] \
+                        aqr = aqr + ((data['K']/c)*(m_size-1)*data['N']/b)*data['X'][k, i, j]*mom['MU'][k, m] \
                             * mom['TAU'][k, m, i, q] * mom['TAU'][k, m, j, r]
 
-                        bqr = bqr + (2*(m_size-1)*data['N'])*(1 - data['X'][k, i, j])*mom['MU'][k, m] \
+                        bqr = bqr + ((data['K']/c)*(m_size-1)*data['N']/b)*(1 - data['X'][k, i, j])*mom['MU'][k, m] \
                             * mom['TAU'][k, m, i, q] * mom['TAU'][k, m, j, r]
     return aqr, bqr
 

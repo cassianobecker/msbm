@@ -15,22 +15,24 @@ def update_Pi(data, prior, hyper, mom, par, remove_self_loops=True):
 
     #Pick a subsample of b nodes for the stochastic varinf
     b = int(150)
+    c = int(20)
     nodes1 = npr.choice(data['N'], b, replace = False)
-    nodes2 = npr.choice(data['N'], b, replace = True)    
+    nodes2 = npr.choice(data['N'], b, replace = True)
+    nets = npr.choice(data['K'], max(c, data['K']), replace = False)
     str_sum = 'km, kij, kmiq, kmjr -> mqr'
     #the correction for this sampling implies dividing the approximated sum by the probability of each set
     #times the count of in how many sets is a pair in.
     NEW_ALPHA = par['kappa']*(prior['ALPHA_0']
-                              + (((data['N'])/b)**2)*np.einsum(str_sum, mom['MU'], data['X'][:, nodes1[:, None], nodes2],
-                                          mom['TAU'][:, :, nodes1, :], mom['TAU'][:, :, nodes2, :]) - 1.0) + 1.0
+                              + ((data['K']/c)*(data['N']/b)**2)*np.einsum(str_sum, mom['MU'][nets, :], data['X'][:, nodes1[:, None], nodes2][nets, :, :],
+                                          mom['TAU'][:, :, nodes1, :][nets, :, :, :], mom['TAU'][:, :, nodes2, :][nets, :, :, :]) - 1.0) + 1.0
     if remove_self_loops:
         NON_EDGES = data['NON_X']
     else:
         NON_EDGES = 1.0 - data['X']
 
     NEW_BETA = par['kappa']*(prior['BETA_0']
-                             + ((data['N'])/b)*np.einsum(str_sum, mom['MU'], NON_EDGES[:, nodes1[:, None], nodes2],
-                                         mom['TAU'][:, :, nodes1, :], mom['TAU'][:, :, nodes2, :]) - 1.0) + 1.0
+                             + ((data['K']/c)*(data['N']/b)**2)*np.einsum(str_sum, mom['MU'][nets, :], NON_EDGES[:, nodes1[:, None], nodes2][nets, :, :],
+                                         mom['TAU'][:, :, nodes1, :][nets, :, :, :], mom['TAU'][:, :, nodes2, :][nets, :, :, :]) - 1.0) + 1.0
 
     return NEW_ALPHA, NEW_BETA
 
@@ -43,8 +45,10 @@ def update_Z(data, prior, hyper, mom, par, remove_self_loops=True):
     #Pick a subsample of b nodes for the stochastic varinf
     NEW_LOG_TAU = mom['LOG_TAU'].copy()
     b = int(150)
+    c = int(20)
     nodes1 = npr.choice(data['N'], b, replace = False)
     nodes2 = npr.choice(data['N'], b, replace = True)
+    nets = npr.choice(data['K'], np.max(data['K'], c), replace = False)
 
     if remove_self_loops:
         NON_EDGES = data['NON_X']
@@ -67,7 +71,7 @@ def update_Z(data, prior, hyper, mom, par, remove_self_loops=True):
 
     NEW_TAU_nodes1 = NEW_TAU_nodes1 / np.expand_dims(np.sum(NEW_TAU_nodes1, axis=3), axis=3)
 
-    NEW_LOG_TAU[:, :, nodes1, :] = par['kappa']*(np.log(NEW_TAU_nodes1))
+    NEW_LOG_TAU[:, :, nodes1, :][nets, :, :, :] = par['kappa']*(np.log(NEW_TAU_nodes1))
 
     return NEW_LOG_TAU
 
